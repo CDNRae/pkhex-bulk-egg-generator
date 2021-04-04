@@ -483,7 +483,7 @@ namespace BulkImporter
         WonderRoom,
         Psyshock,
         Venoshock,
-        Autotomize,
+        Automotize,
         RagePowder,
         Telekinesis,
         MagicRoom,
