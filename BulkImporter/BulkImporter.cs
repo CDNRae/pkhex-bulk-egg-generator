@@ -19,7 +19,7 @@ namespace BulkImporter
         IcePunch,
         ThunderPunch,
         Scratch,
-        ViseGrip,
+        ViceGrip,
         Guillotine,
         RazorWind,
         SwordsDance,
