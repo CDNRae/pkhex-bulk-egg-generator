@@ -847,9 +847,20 @@ namespace BulkImporter
         public ISaveFileProvider SaveFileEditor { get; private set; } = null!;
         public IPKMView PKMEditor { get; private set; } = null!;
 
+        //Random number generator for form generation
+        Random random = new Random();
+
         // Forms
         private Form form = new Form();
         private TextBox input = new TextBox();
+
+        //Pokemon forms
+        public int[] burmyForms = { 412, 905, 906 };
+        public int[] shellosForms = { 422, 911 };
+        public int[] scatterbugForms = { 666, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981 };
+        public int[] flabebeForms = { 669, 986, 987, 988, 989 };
+        public int[] oricorioForms = { 741, 1021, 1022, 1023 };
+        public int[] miniorForms = { 774, 1045, 1046, 1047, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057};
 
         // Plugin initialization
         public void Initialize(params object[] args)
@@ -917,9 +928,9 @@ namespace BulkImporter
             List<PKM> pokemonList = new List<PKM>(); // list of all Pokemon that will be added to the sav
             string showdownData = this.input.Text; // user's input
 
-            var showdownArray = JsonConvert.DeserializeObject<List<RawPokemon>>(showdownData); //jsonify the data
+            var pokemonArray = JsonConvert.DeserializeObject<List<RawPokemon>>(showdownData); //jsonify the data
 
-            foreach (RawPokemon rawPokemon in showdownArray)
+            foreach (RawPokemon rawPokemon in pokemonArray)
             {
                 PKM pokemon = new PK2();
 
@@ -953,31 +964,77 @@ namespace BulkImporter
                 }
 
                 // Set the species according to the Species enum
-                int speciesAsNumber = (int)(Species)Enum.Parse(typeof(Species), rawPokemon.Species);
-                pokemon.Species = speciesAsNumber;
+                int speciesAsNumber = 0;
+
+                //Check if the Pokemon is Alolan or not; if it is, do some extra logic to set the proper form
+                if (rawPokemon.Species.Contains("Alolan"))
+                {
+                    string[] pokemon_name = rawPokemon.Species.Split('_');
+                    speciesAsNumber = (int)(Species)Enum.Parse(typeof(Species), pokemon_name[1]);
+                    pokemon.SetForm(810);
+                    pokemon.Species = speciesAsNumber;
+                }
+                else
+                {
+                    speciesAsNumber = (int)(Species)Enum.Parse(typeof(Species), rawPokemon.Species);
+                    pokemon.Species = speciesAsNumber;
+                }
+
+                // Check to see if the Pokemon has forms (i.e. Flabebe, Shellos, etc.), and if it does, randomly generate one
+                if (rawPokemon.Species.Contains("Burmy"))
+                {
+                    int form = random.Next(0, burmyForms.Length - 1);
+                    pokemon.SetForm(form);
+                }
+                else if (rawPokemon.Species.Contains("Shellos"))
+                {
+                    int form = random.Next(0, shellosForms.Length - 1);
+                    pokemon.SetForm(form);
+                }
+                else if (rawPokemon.Species.Contains("Scatterbug"))
+                {
+                    int form = random.Next(0, scatterbugForms.Length - 1);
+                    pokemon.SetForm(form);
+                }
+                else if (rawPokemon.Species.Contains("Flabébé"))
+                {
+                    int form = random.Next(0, flabebeForms.Length - 1);
+                    pokemon.SetForm(form);
+                }
+                else if (rawPokemon.Species.Contains("Oricorio"))
+                {
+                    int form = random.Next(0, oricorioForms.Length - 1);
+                    pokemon.SetForm(form);
+                }
+                else if (rawPokemon.Species.Contains("Minior"))
+                {
+                    int form = random.Next(0, miniorForms.Length - 1);
+                    pokemon.SetForm(form);
+                }
 
                 // Set the ability
-                int abilityAsNumber = (int)(Ability)Enum.Parse(typeof(Ability), rawPokemon.Ability);
-                pokemon.Ability = abilityAsNumber;
+                string ability = rawPokemon.Ability.Replace(" ", "");
+                int abilityAsNumber = (int)(Ability)Enum.Parse(typeof(Ability), ability);
+                pokemon.SetAbility(abilityAsNumber);
                 
                 //Set gender
                 switch (rawPokemon.Gender)
                 {
                     case "M":
-                        pokemon.Gender = 0;
+                        pokemon.SetGender(0);
                         break;
                     case "F":
-                        pokemon.Gender = 1;
+                        pokemon.SetGender(1);
                         break;
                     case "N":
-                        pokemon.Gender = 2;
+                        pokemon.SetGender(2);
                         break;
                 }
 
                 // Set current level, and if it's 1, check to see if it should be an egg
                 pokemon.CurrentLevel = rawPokemon.Level;
 
-                if (rawPokemon.Level == 1)
+                if (rawPokemon.IsEgg == true)
                 {
                     pokemon.IsEgg = rawPokemon.IsEgg;
                 }
@@ -995,21 +1052,30 @@ namespace BulkImporter
                 pokemon.IV_SPE = rawPokemon.Spe;
 
                 // Set moves and make sure they have the proper PP
+                string move = "";
                 if (string.IsNullOrEmpty(rawPokemon.MoveOne) == false)
                 {
-                    pokemon.Move1 = (int)(Move)Enum.Parse(typeof(Move), rawPokemon.MoveOne);
+                    move = rawPokemon.MoveOne.Replace("-", "");
+                    move = rawPokemon.MoveOne.Replace(" ", "");
+                    pokemon.Move1 = (int)(Move)Enum.Parse(typeof(Move), move);
                 }
                 if (string.IsNullOrEmpty(rawPokemon.MoveTwo) == false)
                 {
-                    pokemon.Move2 = (int)(Move)Enum.Parse(typeof(Move), rawPokemon.MoveTwo);
+                    move = rawPokemon.MoveTwo.Replace("-", "");
+                    move = rawPokemon.MoveTwo.Replace(" ", "");
+                    pokemon.Move2 = (int)(Move)Enum.Parse(typeof(Move), move);
                 }
                 if (string.IsNullOrEmpty(rawPokemon.MoveThree) == false)
                 {
-                    pokemon.Move3 = (int)(Move)Enum.Parse(typeof(Move), rawPokemon.MoveThree);
+                    move = rawPokemon.MoveThree.Replace("-", "");
+                    move = rawPokemon.MoveThree.Replace(" ", "");
+                    pokemon.Move3 = (int)(Move)Enum.Parse(typeof(Move), move);
                 }
                 if (string.IsNullOrEmpty(rawPokemon.MoveFour) == false)
                 {
-                    pokemon.Move4 = (int)(Move)Enum.Parse(typeof(Move), rawPokemon.MoveFour);
+                    move = rawPokemon.MoveFour.Replace("-", "");
+                    move = rawPokemon.MoveFour.Replace(" ", "");
+                    pokemon.Move4 = (int)(Move)Enum.Parse(typeof(Move), move);
                 }
 
                 pokemon.SetMaximumPPCurrent();

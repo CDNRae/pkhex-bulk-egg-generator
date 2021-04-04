@@ -10,7 +10,7 @@
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="PKHeX.Core" Version="20.10.10" />
+    <PackageReference Include="PKHeX.Core" Version="21.4.1" />
   </ItemGroup>
 
   <ItemGroup>
