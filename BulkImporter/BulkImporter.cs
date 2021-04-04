@@ -483,7 +483,7 @@ namespace BulkImporter
         WonderRoom,
         Psyshock,
         Venoshock,
-        Automotize,
+        Autotomize,
         RagePowder,
         Telekinesis,
         MagicRoom,
@@ -1015,6 +1015,9 @@ namespace BulkImporter
                 GameVersion game = (GameVersion)sav.Game;
                 EncounterEgg encounterEgg = new EncounterEgg(speciesAsNumber, pokemon.Form, 1, sav.Generation, game);
                 PKM pokemonAsEgg = encounterEgg.ConvertToPKM(sav);
+                pokemonAsEgg.IsEgg = true;
+                pokemon.IsNicknamed = true;
+                pokemon.Nickname = "Egg";
 
                 // Set the ability
                 string ability = rawPokemon.Ability.Replace(" ", "");
@@ -1089,7 +1092,25 @@ namespace BulkImporter
                 {
                     CommonEdits.SetUnshiny(pokemonAsEgg);
                 }
-                
+
+                pokemonAsEgg.Met_Location = 0;
+
+                MessageBox.Show(generation.ToString());
+                if (generation == 7 || generation == 6 || generation == 5)
+                {
+                    pokemonAsEgg.Egg_Location = Locations.Daycare5;
+                }
+                else
+                {
+                    pokemonAsEgg.Egg_Location = Locations.Daycare4;
+                }
+
+                pokemonAsEgg.IsNicknamed = true;
+                pokemonAsEgg.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, generation);
+
+                //Hatch counter is for some reason called "CurrentFriendship".  Don't ask me why, I don't know.
+                pokemonAsEgg.CurrentFriendship = 1;
+
                 pokemonList.Add(pokemonAsEgg);
             }
 
