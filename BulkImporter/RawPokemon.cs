@@ -12,8 +12,8 @@ namespace BulkImporter
         public string Ability { get; set; } = null!;
         public string Gender { get; set; } = null!;
         public int Level { get; set; }
-        public bool IsEgg { get; set; }
-        public bool IsShiny { get; set; }
+        public string IsEgg { get; set; }
+        public string IsShiny { get; set; }
         public string Nature { get; set; } = null!;
         public int HP { get; set; }
         public int Atk { get; set; }

@@ -89,7 +89,7 @@ namespace BulkImporter
         StunSpore,
         SleepPowder,
         PetalDance,
-        stringShot,
+        StringShot,
         DragonRage,
         FireSpin,
         ThunderShock,
@@ -1012,85 +1012,85 @@ namespace BulkImporter
                     pokemon.SetForm(form);
                 }
 
+                GameVersion game = (GameVersion)sav.Game;
+                EncounterEgg encounterEgg = new EncounterEgg(speciesAsNumber, pokemon.Form, 1, sav.Generation, game);
+                PKM pokemonAsEgg = encounterEgg.ConvertToPKM(sav);
+
                 // Set the ability
                 string ability = rawPokemon.Ability.Replace(" ", "");
                 int abilityAsNumber = (int)(Ability)Enum.Parse(typeof(Ability), ability);
-                pokemon.SetAbility(abilityAsNumber);
+                pokemonAsEgg.SetAbility(abilityAsNumber);
                 
                 //Set gender
                 switch (rawPokemon.Gender)
                 {
                     case "M":
-                        pokemon.SetGender(0);
+                        pokemonAsEgg.SetGender(0);
                         break;
                     case "F":
-                        pokemon.SetGender(1);
+                        pokemonAsEgg.SetGender(1);
                         break;
                     case "N":
-                        pokemon.SetGender(2);
+                        pokemonAsEgg.SetGender(2);
                         break;
-                }
-
-                // Set current level, and if it's 1, check to see if it should be an egg
-                pokemon.CurrentLevel = rawPokemon.Level;
-
-                if (rawPokemon.IsEgg == true)
-                {
-                    pokemon.IsEgg = rawPokemon.IsEgg;
                 }
                 
                 // Set Nature via the Nature enum
                 int natureAsNumber = (int)(Nature)Enum.Parse(typeof(Nature), rawPokemon.Nature);
-                pokemon.Nature = natureAsNumber;
+                pokemonAsEgg.Nature = natureAsNumber;
 
                 // Set the IVs
-                pokemon.IV_HP = rawPokemon.HP;
-                pokemon.IV_ATK = rawPokemon.Atk;
-                pokemon.IV_DEF = rawPokemon.Def;
-                pokemon.IV_SPA = rawPokemon.SpA;
-                pokemon.IV_SPD = rawPokemon.SpD;
-                pokemon.IV_SPE = rawPokemon.Spe;
+                pokemonAsEgg.IV_HP = rawPokemon.HP;
+                pokemonAsEgg.IV_ATK = rawPokemon.Atk;
+                pokemonAsEgg.IV_DEF = rawPokemon.Def;
+                pokemonAsEgg.IV_SPA = rawPokemon.SpA;
+                pokemonAsEgg.IV_SPD = rawPokemon.SpD;
+                pokemonAsEgg.IV_SPE = rawPokemon.Spe;
 
                 // Set moves and make sure they have the proper PP
                 string move = "";
                 if (string.IsNullOrEmpty(rawPokemon.MoveOne) == false)
                 {
                     move = rawPokemon.MoveOne.Replace("-", "");
-                    move = rawPokemon.MoveOne.Replace(" ", "");
-                    pokemon.Move1 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    move = move.Replace(" ", "");
+                    pokemonAsEgg.Move1 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    pokemonAsEgg.RelearnMove1 = pokemonAsEgg.Move1;
                 }
                 if (string.IsNullOrEmpty(rawPokemon.MoveTwo) == false)
                 {
                     move = rawPokemon.MoveTwo.Replace("-", "");
-                    move = rawPokemon.MoveTwo.Replace(" ", "");
-                    pokemon.Move2 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    move = move.Replace(" ", "");
+                    pokemonAsEgg.Move2 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    pokemonAsEgg.RelearnMove2 = pokemonAsEgg.Move2;
                 }
                 if (string.IsNullOrEmpty(rawPokemon.MoveThree) == false)
                 {
                     move = rawPokemon.MoveThree.Replace("-", "");
-                    move = rawPokemon.MoveThree.Replace(" ", "");
-                    pokemon.Move3 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    move = move.Replace(" ", "");
+                    pokemonAsEgg.Move3 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    pokemonAsEgg.RelearnMove3 = pokemonAsEgg.Move3;
                 }
                 if (string.IsNullOrEmpty(rawPokemon.MoveFour) == false)
                 {
                     move = rawPokemon.MoveFour.Replace("-", "");
-                    move = rawPokemon.MoveFour.Replace(" ", "");
-                    pokemon.Move4 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    move = move.Replace(" ", "");
+                    pokemonAsEgg.Move4 = (int)(Move)Enum.Parse(typeof(Move), move);
+                    pokemonAsEgg.RelearnMove4 = pokemonAsEgg.Move4;
                 }
 
-                pokemon.SetMaximumPPCurrent();
+                pokemonAsEgg.SetMaximumPPCurrent();
 
                 //Finally, if the Pokemon is supposed to be shiny, make it so
-                if (rawPokemon.IsShiny == true)
+                if (rawPokemon.IsShiny == "true")
                 {
-                    CommonEdits.SetShiny(pokemon);
+                    CommonEdits.SetShiny(pokemonAsEgg);
                 }
                 else
                 {
-                    CommonEdits.SetUnshiny(pokemon);
+                    CommonEdits.SetUnshiny(pokemonAsEgg);
                 }
-
-                pokemonList.Add(pokemon);
+                
+                pokemonList.Add(pokemonAsEgg);
             }
 
             // Import Pokemon, reload the boxes so they can be seen, show a message and close the window
