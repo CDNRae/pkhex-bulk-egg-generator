@@ -1095,7 +1095,6 @@ namespace BulkImporter
 
                 pokemonAsEgg.Met_Location = 0;
 
-                MessageBox.Show(generation.ToString());
                 if (generation == 7 || generation == 6 || generation == 5)
                 {
                     pokemonAsEgg.Egg_Location = Locations.Daycare5;
