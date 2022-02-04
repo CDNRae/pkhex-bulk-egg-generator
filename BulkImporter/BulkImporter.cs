@@ -6,6 +6,7 @@ using PKHeX.Core;
 
 namespace BulkImporter
 {
+    // Enum of move data, taken from PKHeX
     public enum Move
     {
         None,
@@ -847,14 +848,25 @@ namespace BulkImporter
         public ISaveFileProvider SaveFileEditor { get; private set; } = null!;
         public IPKMView PKMEditor { get; private set; } = null!;
 
-        //Random number generator for form generation
+        // Random number generator for form generation
         Random random = new Random();
 
         // Forms
         private Form form = new Form();
         private TextBox input = new TextBox();
 
-        //Pokemon forms
+        private NumericUpDown numberToGenerate = new NumericUpDown();
+        private NumericUpDown shinyChance = new NumericUpDown();
+        private NumericUpDown eggMoveChance = new NumericUpDown();
+        private NumericUpDown hiddenAbilityChance = new NumericUpDown();
+        private NumericUpDown maxIVValue = new NumericUpDown();
+        private NumericUpDown minIVValue = new NumericUpDown();
+
+        private CheckedListBox typeSelection = new CheckedListBox();
+        private RadioButton considerFutureTypesYes = new RadioButton();
+        private RadioButton considerFutureTypesNo = new RadioButton();
+
+        // Pokemon forms -- doesn't include battle-only forms (i.e. Megas) or Alolan variants
         public int[] burmyForms = { 412, 905, 906 };
         public int[] shellosForms = { 422, 911 };
         public int[] scatterbugForms = { 666, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981 };
@@ -870,6 +882,8 @@ namespace BulkImporter
             PKMEditor = (IPKMView)Array.Find(args, z => z is IPKMView);
             var menu = (ToolStrip)Array.Find(args, z => z is ToolStrip);
             LoadMenuStrip(menu);
+            string[] pokemonTypes = { "Select All", "Normal", "Fire", "Fighting", "Water", "Flying", "Grass", "Poison", "Electric", "Ground", "Psychic", "Rock", "Ice", "Bug", "Dragon", "Ghost", "Dark", "Steel", "Fairy" };
+            typeSelection.Items.AddRange(pokemonTypes);
         }
 
         // Adding Plugin to PKHeX menu
@@ -895,230 +909,202 @@ namespace BulkImporter
 
         public void generateForm()
         {
+            List<Control> formControls = new List<Control>();
             Button createButton = new Button();
 
-            //Set up form
-            this.form.Size = new System.Drawing.Size(500, 500);
-            this.form.Name = "Bulk Showdown Importer";
+            // Set up form
+            form.Size = new System.Drawing.Size(390, 450);
+            form.Name = "Bulk Importer";
 
-            //Set up TextBox
-            this.input.AcceptsReturn = true;
-            this.input.AcceptsTab = true;
-            this.input.Multiline = true;
-            this.input.ScrollBars = ScrollBars.Vertical;
-            this.input.Size = new System.Drawing.Size(463, 400);
-            this.input.Location = new System.Drawing.Point(10, 10);
+            // Set up Type Selection
+            formControls.Add(new Label {
+                Location = new System.Drawing.Point(8, 10),
+                AutoSize = true,
+                Text = "Types",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
 
-            //Set up "Add to Boxes" button
-            createButton.Text = "Add to Boxes";
+            typeSelection.Location = new System.Drawing.Point(10, 25);
+            typeSelection.Size = new System.Drawing.Size(150, 300);
+            typeSelection.SelectedValueChanged += new EventHandler(SelectOrDeselectAllTypes);
+
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(8, 320),
+                AutoSize = true,
+                Text = "Consider typing of future evolutions?",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            considerFutureTypesYes.Text = "Yes";
+            considerFutureTypesYes.Location = new System.Drawing.Point(10, 335);
+            considerFutureTypesYes.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            considerFutureTypesYes.AutoSize = true;
+
+            considerFutureTypesNo.Text = "No";
+            considerFutureTypesNo.Location = new System.Drawing.Point(10, 350);
+            considerFutureTypesNo.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            considerFutureTypesNo.AutoSize = true;
+
+            formControls.Add(typeSelection);
+            formControls.Add(considerFutureTypesYes);
+            formControls.Add(considerFutureTypesNo);
+
+            // Set up the input for the number of pokemon to generate
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(170, 10),
+                AutoSize = true,
+                Text = "Number of Pokemon to Generate",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            numberToGenerate.Value = 50;
+            numberToGenerate.Maximum = 100;
+            numberToGenerate.Minimum = 1;
+            numberToGenerate.Location = new System.Drawing.Point(170, 25);
+
+            formControls.Add(numberToGenerate);
+
+            // Set up the input for the min IV value
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(170, 55),
+                AutoSize = true,
+                Text = "Min IV Value",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            minIVValue.Value = 0;
+            minIVValue.Maximum = 31;
+            minIVValue.Minimum = 0;
+            minIVValue.Location = new System.Drawing.Point(170, 70);
+
+            formControls.Add(minIVValue);
+
+            //Set up the input for the max IV value
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(170, 100),
+                AutoSize = true,
+                Text = "Max IV Value",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            maxIVValue.Value = 31;
+            maxIVValue.Maximum = 31;
+            maxIVValue.Minimum = 0;
+            maxIVValue.Location = new System.Drawing.Point(170, 115);
+
+            formControls.Add(maxIVValue);
+
+            // Set up the input for shiny chance
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(170, 145),
+                AutoSize = true,
+                Text = "Shiny Chance",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            shinyChance.Value = 1;
+            shinyChance.Maximum = 100;
+            shinyChance.Minimum = 1;
+            shinyChance.Location = new System.Drawing.Point(170, 160);
+
+            formControls.Add(shinyChance);
+
+            // Set up the input for Egg Move Chance
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(170, 190),
+                AutoSize = true,
+                Text = "Egg Move Chance",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            eggMoveChance.Value = 25;
+            eggMoveChance.Maximum = 100;
+            eggMoveChance.Minimum = 1;
+            eggMoveChance.Location = new System.Drawing.Point(170, 205);
+
+            formControls.Add(eggMoveChance);
+
+            // Set up the input for Hidden Ability Chance
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(170, 235),
+                AutoSize = true,
+                Text = "Hidden Ability Chance",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            hiddenAbilityChance.Value = 25;
+            hiddenAbilityChance.Maximum = 100;
+            hiddenAbilityChance.Minimum = 1;
+            hiddenAbilityChance.Location = new System.Drawing.Point(170, 250);
+
+            formControls.Add(hiddenAbilityChance);
+
+            // Set up "Add to Boxes" button
+            createButton.Text = "Generate Pokemon";
             createButton.Size = new System.Drawing.Size(185, 20);
-            createButton.Location = new System.Drawing.Point(150, 420);
+            createButton.Location = new System.Drawing.Point(100, 380);
             createButton.Click += new EventHandler(AddToBoxesButtonClick);
 
-            //Add everything to the form, and show it
-            this.form.Controls.Add(this.input);
-            this.form.Controls.Add(createButton);
-            this.form.ShowDialog();
+            formControls.Add(createButton);
+
+            // Add everything to the form, and show it
+            form.Controls.AddRange(formControls.ToArray());
+            form.ShowDialog();
+        }
+
+        public void SelectOrDeselectAllTypes(Object sender, EventArgs eventArgs)
+        {
+            if (typeSelection.SelectedIndex == 0)
+            {
+                bool checkItems = false;
+
+                if (typeSelection.GetItemCheckState(0) == CheckState.Checked)
+                {
+                    checkItems = true;
+                }
+
+                for (int i = 0; i < typeSelection.Items.Count; i++)
+                {
+                    typeSelection.SetItemChecked(i, checkItems);
+                }
+            }
         }
 
         public void AddToBoxesButtonClick(Object sender, EventArgs events)
         {
-            var sav = SaveFileEditor.SAV; // current save
-            int generation = sav.Generation; // the generation of the current save -- used to determine the PK save format
-            List<PKM> pokemonList = new List<PKM>(); // list of all Pokemon that will be added to the sav
-            string showdownData = this.input.Text; // user's input
+            var sav = SaveFileEditor.SAV;
+            List<PKM> pokemonList = new List<PKM>();
+            // MessageBox.Show(sav.Generation.ToString());
+            // MessageBox.Show(numberToGenerate.Value.ToString());
 
-            var pokemonArray = JsonConvert.DeserializeObject<List<RawPokemon>>(showdownData); //jsonify the data
-
-            foreach (RawPokemon rawPokemon in pokemonArray)
+            // Loop until the number of Pokemon generated equals numberToGenerate
+            for (int i = 0; i < numberToGenerate.Value; i++)
             {
-                PKM pokemon = new PK2();
 
-                //Determine save format
-                switch (generation)
-                {
-                    case 1:
-                        pokemon = new PK1();
-                        break;
-                    case 2:
-                        pokemon = new PK2();
-                        break;
-                    case 3:
-                        pokemon = new PK3();
-                        break;
-                    case 4:
-                        pokemon = new PK4();
-                        break;
-                    case 5:
-                        pokemon = new PK5();
-                        break;
-                    case 6:
-                        pokemon = new PK6();
-                        break;
-                    case 7:
-                        pokemon = new PK7();
-                        break;
-                    case 8:
-                        pokemon = new PK8();
-                        break;
-                }
+                /*int pokeDexNum = random.Next(1, sav.MaxSpeciesID);
 
-                // Set the species according to the Species enum
-                int speciesAsNumber = 0;
+                EncounterEgg encounterEgg = new EncounterEgg(pokeDexNum, 0, 1, sav.Generation, (GameVersion)sav.Version);
+                PKM pkmn = encounterEgg.ConvertToPKM(sav);
 
-                //Check if the Pokemon is Alolan or not; if it is, do some extra logic to set the proper form
-                if (rawPokemon.Species.Contains("Alolan"))
-                {
-                    string[] pokemon_name = rawPokemon.Species.Split('_');
-                    speciesAsNumber = (int)(Species)Enum.Parse(typeof(Species), pokemon_name[1]);
-                    pokemon.SetForm(810);
-                    pokemon.Species = speciesAsNumber;
-                }
-                else
-                {
-                    speciesAsNumber = (int)(Species)Enum.Parse(typeof(Species), rawPokemon.Species);
-                    pokemon.Species = speciesAsNumber;
-                }
+                IEnumerable<EncounterEgg> generatedEgg = EncounterEggGenerator.GenerateEggs(pkmn, sav.Generation);
 
-                // Check to see if the Pokemon has forms (i.e. Flabebe, Shellos, etc.), and if it does, randomly generate one
-                if (rawPokemon.Species.Contains("Burmy"))
+                foreach (var e in generatedEgg)
                 {
-                    int form = random.Next(0, burmyForms.Length - 1);
-                    pokemon.SetForm(form);
-                }
-                else if (rawPokemon.Species.Contains("Shellos"))
-                {
-                    int form = random.Next(0, shellosForms.Length - 1);
-                    pokemon.SetForm(form);
-                }
-                else if (rawPokemon.Species.Contains("Scatterbug"))
-                {
-                    int form = random.Next(0, scatterbugForms.Length - 1);
-                    pokemon.SetForm(form);
-                }
-                else if (rawPokemon.Species.Contains("Flabébé"))
-                {
-                    int form = random.Next(0, flabebeForms.Length - 1);
-                    pokemon.SetForm(form);
-                }
-                else if (rawPokemon.Species.Contains("Oricorio"))
-                {
-                    int form = random.Next(0, oricorioForms.Length - 1);
-                    pokemon.SetForm(form);
-                }
-                else if (rawPokemon.Species.Contains("Minior"))
-                {
-                    int form = random.Next(0, miniorForms.Length - 1);
-                    pokemon.SetForm(form);
-                }
+                    PKM pokemon = e.ConvertToPKM(sav);
 
-                GameVersion game = (GameVersion)sav.Game;
-                EncounterEgg encounterEgg = new EncounterEgg(speciesAsNumber, pokemon.Form, 1, sav.Generation, game);
-                PKM pokemonAsEgg = encounterEgg.ConvertToPKM(sav);
-                pokemonAsEgg.IsEgg = true;
-                pokemon.IsNicknamed = true;
-                pokemon.Nickname = "Egg";
 
-                // Set the ability
-                string ability = rawPokemon.Ability.Replace(" ", "");
-                int abilityAsNumber = (int)(Ability)Enum.Parse(typeof(Ability), ability);
-                pokemonAsEgg.SetAbility(abilityAsNumber);
-                
-                //Set gender
-                switch (rawPokemon.Gender)
-                {
-                    case "M":
-                        pokemonAsEgg.SetGender(0);
-                        break;
-                    case "F":
-                        pokemonAsEgg.SetGender(1);
-                        break;
-                    case "N":
-                        pokemonAsEgg.SetGender(2);
-                        break;
-                }
-                
-                // Set Nature via the Nature enum
-                int natureAsNumber = (int)(Nature)Enum.Parse(typeof(Nature), rawPokemon.Nature);
-                pokemonAsEgg.Nature = natureAsNumber;
-
-                // Set the IVs
-                pokemonAsEgg.IV_HP = rawPokemon.HP;
-                pokemonAsEgg.IV_ATK = rawPokemon.Atk;
-                pokemonAsEgg.IV_DEF = rawPokemon.Def;
-                pokemonAsEgg.IV_SPA = rawPokemon.SpA;
-                pokemonAsEgg.IV_SPD = rawPokemon.SpD;
-                pokemonAsEgg.IV_SPE = rawPokemon.Spe;
-
-                // Set moves and make sure they have the proper PP
-                string move = "";
-                if (string.IsNullOrEmpty(rawPokemon.MoveOne) == false)
-                {
-                    move = rawPokemon.MoveOne.Replace("-", "");
-                    move = move.Replace(" ", "");
-                    pokemonAsEgg.Move1 = (int)(Move)Enum.Parse(typeof(Move), move);
-                    pokemonAsEgg.RelearnMove1 = pokemonAsEgg.Move1;
-                }
-                if (string.IsNullOrEmpty(rawPokemon.MoveTwo) == false)
-                {
-                    move = rawPokemon.MoveTwo.Replace("-", "");
-                    move = move.Replace(" ", "");
-                    pokemonAsEgg.Move2 = (int)(Move)Enum.Parse(typeof(Move), move);
-                    pokemonAsEgg.RelearnMove2 = pokemonAsEgg.Move2;
-                }
-                if (string.IsNullOrEmpty(rawPokemon.MoveThree) == false)
-                {
-                    move = rawPokemon.MoveThree.Replace("-", "");
-                    move = move.Replace(" ", "");
-                    pokemonAsEgg.Move3 = (int)(Move)Enum.Parse(typeof(Move), move);
-                    pokemonAsEgg.RelearnMove3 = pokemonAsEgg.Move3;
-                }
-                if (string.IsNullOrEmpty(rawPokemon.MoveFour) == false)
-                {
-                    move = rawPokemon.MoveFour.Replace("-", "");
-                    move = move.Replace(" ", "");
-                    pokemonAsEgg.Move4 = (int)(Move)Enum.Parse(typeof(Move), move);
-                    pokemonAsEgg.RelearnMove4 = pokemonAsEgg.Move4;
-                }
-
-                pokemonAsEgg.SetMaximumPPCurrent();
-
-                //Finally, if the Pokemon is supposed to be shiny, make it so
-                if (rawPokemon.IsShiny == "true")
-                {
-                    CommonEdits.SetShiny(pokemonAsEgg);
-                }
-                else
-                {
-                    CommonEdits.SetUnshiny(pokemonAsEgg);
-                }
-
-                pokemonAsEgg.Met_Location = 0;
-
-                if (generation == 7 || generation == 6 || generation == 5)
-                {
-                    pokemonAsEgg.Egg_Location = Locations.Daycare5;
-                }
-                else
-                {
-                    pokemonAsEgg.Egg_Location = Locations.Daycare4;
-                }
-
-                pokemonAsEgg.IsNicknamed = true;
-                pokemonAsEgg.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, generation);
-
-                //Hatch counter is for some reason called "CurrentFriendship".  Don't ask me why, I don't know.
-                pokemonAsEgg.CurrentFriendship = 1;
-
-                pokemonList.Add(pokemonAsEgg);
+                }*/
             }
-
-            // Import Pokemon, reload the boxes so they can be seen, show a message and close the window
+                                    
             sav.ImportPKMs(pokemonList);
             SaveFileEditor.ReloadSlots();
-            MessageBox.Show("Done!");
-            this.input.Clear();
-            this.form.Close();
         }
 
         public void NotifySaveLoaded()

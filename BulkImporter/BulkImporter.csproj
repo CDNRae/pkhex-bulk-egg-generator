@@ -5,15 +5,17 @@
     <OutputType>Library</OutputType>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="PKHeX.Core" Version="21.4.1" />
+    <PackageReference Include="PKHeX.Core" Version="21.11.27" />
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Data\pokedex\" />
     <Folder Include="Properties\" />
   </ItemGroup>
 
