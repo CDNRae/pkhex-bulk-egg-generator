@@ -15,8 +15,39 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\pokedex\" />
-    <Folder Include="Properties\" />
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="BulkImporterData\pokedex\gen_3.json">
+      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
+    </None>
+    <None Update="BulkImporterData\pokedex\gen_4.json">
+      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
+    </None>
+    <None Update="BulkImporterData\pokedex\gen_5.json">
+      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
+    </None>
+    <None Update="BulkImporterData\pokedex\gen_6.json">
+      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
+    </None>
+    <None Update="BulkImporterData\pokedex\gen_7.json">
+      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
+    </None>
+    <None Update="BulkImporterData\pokedex\gen_8.json">
+      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

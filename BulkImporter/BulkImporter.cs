@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using PKHeX.Core;
@@ -1079,14 +1081,115 @@ namespace BulkImporter
 
         public void AddToBoxesButtonClick(Object sender, EventArgs events)
         {
-            var sav = SaveFileEditor.SAV;
-            List<PKM> pokemonList = new List<PKM>();
-            // MessageBox.Show(sav.Generation.ToString());
-            // MessageBox.Show(numberToGenerate.Value.ToString());
+            // Declare variables
+            string directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); //directory the BulkImporter.dll is in
+            string game = ""; // game version (ie oras, hgss, etc.)
+            int numPokemonInGenDex = 0; // number of pokemon in the dex for the given generation
+
+            SaveFile sav = SaveFileEditor.SAV; // current savefile
+
+            List<string> eggObtainablePkmn = new List<string>(); // list of pkmn obtainable by egg for specified generation
+            List<PKM> pokemonList = new List<PKM>(); // list of pkmn to add to boxes
+
+            List<RawPokemon> rawPokemonList = JsonConvert.DeserializeObject<List<RawPokemon>>(File.ReadAllText(directory + "/BulkImporterData/pokemon.json")) ?? new List<RawPokemon>(); // raw data on all pokemon obtainable by egg
+            
+            // Get the list of egg-obtainable pokemon for the save file's generation
+            switch (sav.Generation)
+            {
+                case 2:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_2.json")) ?? new List<string>();
+                    break;
+                case 3:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_3.json")) ?? new List<string>();
+                    break;
+                case 4:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_4.json")) ?? new List<string>();
+                    break;
+                case 5:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_5.json")) ?? new List<string>();
+                    break;
+                case 6:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_6.json")) ?? new List<string>();
+                    break;
+                case 7:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_7.json")) ?? new List<string>();
+                    break;
+                case 8:
+                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_8.json")) ?? new List<string>();
+                    break;
+                default:
+                    break;
+            }
+
+            numPokemonInGenDex = eggObtainablePkmn.Count;
+
+            // Check game version, used for determining specific movesets
+            if (sav.Version == GameVersion.GD || sav.Version == GameVersion.SV)
+            {
+                game = "gold/silver";
+            }
+            else if (sav.Version == GameVersion.C)
+            {
+                game = "crystal";
+            }
+            else if (sav.Version == GameVersion.R || sav.Version == GameVersion.S)
+            {
+                game = "ruby/sapphire";
+            }
+            else if (sav.Version == GameVersion.E)
+            {
+                game = "emerald";
+            }
+            else if (sav.Version == GameVersion.FR || sav.Version == GameVersion.LG)
+            {
+                game = "fire_red/leaf_green";
+            }
+            else if (sav.Version == GameVersion.D || sav.Version == GameVersion.S)
+            {
+                game = "diamond/pearl";
+            }
+            else if (sav.Version == GameVersion.Pt)
+            {
+                game = "platinum";
+            }
+            else if (sav.Version == GameVersion.HG || sav.Version == GameVersion.SS)
+            {
+                game = "heart_gold/soul_silver";
+            }
+            else if (sav.Version == GameVersion.W || sav.Version == GameVersion.B)
+            {
+                game = "black/white";
+            }
+            else if (sav.Version == GameVersion.W2 || sav.Version == GameVersion.B2)
+            {
+                game = "black_2/white_2";
+            }
+            else if (sav.Version == GameVersion.OR || sav.Version == GameVersion.AS)
+            {
+                game = "omega_ruby/alpha_sapphire";
+            }
+            else if (sav.Version == GameVersion.X || sav.Version == GameVersion.Y)
+            {
+                game = "x/y";
+            }
+            else if (sav.Version == GameVersion.SN || sav.Version == GameVersion.MN)
+            {
+                game = "sun/moon";
+            }
+            else if (sav.Version == GameVersion.US || sav.Version == GameVersion.UM)
+            {
+                game = "ultra_sun/ultra_moon";
+            }
+            else if (sav.Version == GameVersion.SW || sav.Version == GameVersion.SH)
+            {
+                game = "sword/shield";
+            }
 
             // Loop until the number of Pokemon generated equals numberToGenerate
             for (int i = 0; i < numberToGenerate.Value; i++)
             {
+                int pokeDexNum = random.Next(0, numPokemonInGenDex);
+                RawPokemon rawPokemon = rawPokemonList[pokeDexNum];
 
                 /*int pokeDexNum = random.Next(1, sav.MaxSpeciesID);
 
