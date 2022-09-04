@@ -1,43 +1,36 @@
-# PKHeX Bulk Importer
+# PKHeX Bulk Egg Generator
 ## About
-The Bulk Importer allows you to import a large number of Pokemon into your save files using PKHeX.
+Previously called the Bulk Pokemon Importer. The Bulk Egg Generator is a PKHeX plugin that allows you to generate eggs in your Pokemon save files. There are additional options that allow the user to control certain aspects of the generated eggs, such as their typing, IVs, nature, and so on.
 
 ## Current Features
-* Bulk import Pokemon into any core Pokemon game
-* Determine each Pokemon's characteristics -- you have control over their moves, whether they're shiny, their level, IVs, etc.
+* Bulk import up to 100 Pokemon eggs at a time
+* Restrict the generated eggs by one or more types, and opt to consider the eggs' future evolutions
+* Set the minimum and maxiumum IV values you want the generated eggs to have
+* Set the chance of a Pokemon being shiny
+* Set the chance of a Pokemon having its Hidden Ability (gen 5+)
+* Set the chance of a Pokemon having egg moves
 
 ## Installation
 Download the latest version from the <a href="https://github.com/CDNRae/pkhex-bulk-importer/releases">releases</a> page, and extract the contents to /PKHex/plugins.  If you don't have a plugins folder in your PKHeX directory, you'll have to create one.
 
 ## Usage
-Once the plugin has been installed, you can view it under the "Tools" menu in PKHeX.  Click on the "Import Pokemon" sub-menu item to open another window with a text area and button.  The text area is for inputting your data; when you're finished, click the button to have the plugin generate the Pokemon you've specified.
+Once the plugin has been installed, you can view it under the "Tools" menu in PKHeX.  Click on the "Egg Generator" sub-menu item to open the Egg Generator. Set the options as you please, and when you're ready, hit "Generate Eggs". You should see your PC boxes fill up with Pokemon Eggs shortly after.
 
-Each Pokemon you enter into the text area must adhere to the following format:
+## Known Issues & FAQ
+### Shiny Pokemon In Gold/Silver/Crystal ignore the min/max IV settings!
+This is expected behaviour, and it's because of the way shinies work in Gen 2. From Gen 3 onward, shininess is determined by three things: the Pokemon's original trainer's ID and secret ID, and the Pokemon's personality value. In Gen 2, however, shininess is determined by the Pokemon's IVs. For a Pokemon to be shiny in Gen 2, it must have a value of 10 for its Speed, Defense, and Special IVs, and a value of 2, 3, 6, 7, 10, 11, 14 or 15 for its Attack IV.
 
-```
-[
-  {
-    "Species": "Bulbasaur",
-    "Ability": "Overgrow",
-    "Gender": "M",
-    "Level": 1,
-    "isEgg": true,
-    "isShiny": true,
-    "Nature": "Serious",
-    "HP": 31,
-    "Atk": 1,
-    "Def": 10,
-    "SpA": 8,
-    "SpD": 5,
-    "Spe": 6,
-    "MoveOne": "Tackle",
-    "MoveTwo": "",
-    "MoveThree": "",
-    "MoveFour": ""
-  }
-]
-```
+You can read more about the mechanic <a href="https://bulbapedia.bulbagarden.net/wiki/Shiny_Pok%C3%A9mon#Generation_II">here</a>.
 
-To add more Pokemon to the list, copy everything between the square brackets ([]), add a comma after the closing curly bracket (}), and then hit "enter".  On the new line, paste what you copied before, and edit it to your liking.
+### PKHeX is flagging the generated Pokemon as illegal, but when I check each Pokemon individually it says they're fine
+This is a known issue, and a solution is being looked into. It affects the following games:
+* X and Y
+* Omega Ruby and Alpha Sapphire
+* Ruby, Sapphire, and Emerald
+* FireRed and LeafGreen
+* 
 
-All fields must be filled out _except_ for the moves.  If you leave any of the others blank, the plugin will throw an error.  It will also throw errors if the data isn't formatted correctly.  If you encounter an error, you can press "Continue" to keep PKHeX running, and adjust your input.
+### One or more of the generated Pokemon is illegal
+Please log an issue <a href="https://github.com/CDNRae/pkhex-bulk-egg-generator/issues">in the issues tab</a>, and include the problems PKHeX has with the Pokemon.
+
+

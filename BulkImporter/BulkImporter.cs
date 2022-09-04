@@ -1,850 +1,14 @@
-﻿using System;
+﻿using PKHeX.Core;
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using System.Windows.Forms;
-using Newtonsoft.Json;
-using PKHeX.Core;
 
 namespace BulkImporter
 {
-    // Enum of move data, taken from PKHeX
-    public enum Move
-    {
-        None,
-        Pound,
-        KarateChop,
-        DoubleSlap,
-        CometPunch,
-        MegaPunch,
-        PayDay,
-        FirePunch,
-        IcePunch,
-        ThunderPunch,
-        Scratch,
-        ViceGrip,
-        Guillotine,
-        RazorWind,
-        SwordsDance,
-        Cut,
-        Gust,
-        WingAttack,
-        Whirlwind,
-        Fly,
-        Bind,
-        Slam,
-        VineWhip,
-        Stomp,
-        DoubleKick,
-        MegaKick,
-        JumpKick,
-        RollingKick,
-        SandAttack,
-        Headbutt,
-        HornAttack,
-        FuryAttack,
-        HornDrill,
-        Tackle,
-        BodySlam,
-        Wrap,
-        TakeDown,
-        Thrash,
-        DoubleEdge,
-        TailWhip,
-        PoisonSting,
-        Twineedle,
-        PinMissile,
-        Leer,
-        Bite,
-        Growl,
-        Roar,
-        Sing,
-        Supersonic,
-        SonicBoom,
-        Disable,
-        Acid,
-        Ember,
-        Flamethrower,
-        Mist,
-        WaterGun,
-        HydroPump,
-        Surf,
-        IceBeam,
-        Blizzard,
-        Psybeam,
-        BubbleBeam,
-        AuroraBeam,
-        HyperBeam,
-        Peck,
-        DrillPeck,
-        Submission,
-        LowKick,
-        Counter,
-        SeismicToss,
-        Strength,
-        Absorb,
-        MegaDrain,
-        LeechSeed,
-        Growth,
-        RazorLeaf,
-        SolarBeam,
-        PoisonPowder,
-        StunSpore,
-        SleepPowder,
-        PetalDance,
-        StringShot,
-        DragonRage,
-        FireSpin,
-        ThunderShock,
-        Thunderbolt,
-        ThunderWave,
-        Thunder,
-        RockThrow,
-        Earthquake,
-        Fissure,
-        Dig,
-        Toxic,
-        Confusion,
-        Psychic,
-        Hypnosis,
-        Meditate,
-        Agility,
-        QuickAttack,
-        Rage,
-        Teleport,
-        NightShade,
-        Mimic,
-        Screech,
-        DoubleTeam,
-        Recover,
-        Harden,
-        Minimize,
-        Smokescreen,
-        ConfuseRay,
-        Withdraw,
-        DefenseCurl,
-        Barrier,
-        LightScreen,
-        Haze,
-        Reflect,
-        FocusEnergy,
-        Bide,
-        Metronome,
-        MirrorMove,
-        SelfDestruct,
-        EggBomb,
-        Lick,
-        Smog,
-        Sludge,
-        BoneClub,
-        FireBlast,
-        Waterfall,
-        Clamp,
-        Swift,
-        SkullBash,
-        SpikeCannon,
-        Constrict,
-        Amnesia,
-        Kinesis,
-        SoftBoiled,
-        HighJumpKick,
-        Glare,
-        DreamEater,
-        PoisonGas,
-        Barrage,
-        LeechLife,
-        LovelyKiss,
-        SkyAttack,
-        Transform,
-        Bubble,
-        DizzyPunch,
-        Spore,
-        Flash,
-        Psywave,
-        Splash,
-        AcidArmor,
-        Crabhammer,
-        Explosion,
-        FurySwipes,
-        Bonemerang,
-        Rest,
-        RockSlide,
-        HyperFang,
-        Sharpen,
-        Conversion,
-        TriAttack,
-        SuperFang,
-        Slash,
-        Substitute,
-        Struggle,
-        Sketch,
-        TripleKick,
-        Thief,
-        SpiderWeb,
-        MindReader,
-        Nightmare,
-        FlameWheel,
-        Snore,
-        Curse,
-        Flail,
-        Conversion2,
-        Aeroblast,
-        CottonSpore,
-        Reversal,
-        Spite,
-        PowderSnow,
-        Protect,
-        MachPunch,
-        ScaryFace,
-        FeintAttack,
-        SweetKiss,
-        BellyDrum,
-        SludgeBomb,
-        MudSlap,
-        Octazooka,
-        Spikes,
-        ZapCannon,
-        Foresight,
-        DestinyBond,
-        PerishSong,
-        IcyWind,
-        Detect,
-        BoneRush,
-        LockOn,
-        Outrage,
-        Sandstorm,
-        GigaDrain,
-        Endure,
-        Charm,
-        Rollout,
-        FalseSwipe,
-        Swagger,
-        MilkDrink,
-        Spark,
-        FuryCutter,
-        SteelWing,
-        MeanLook,
-        Attract,
-        SleepTalk,
-        HealBell,
-        Return,
-        Present,
-        Frustration,
-        Safeguard,
-        PainSplit,
-        SacredFire,
-        Magnitude,
-        DynamicPunch,
-        Megahorn,
-        DragonBreath,
-        BatonPass,
-        Encore,
-        Pursuit,
-        RapidSpin,
-        SweetScent,
-        IronTail,
-        MetalClaw,
-        VitalThrow,
-        MorningSun,
-        Synthesis,
-        Moonlight,
-        HiddenPower,
-        CrossChop,
-        Twister,
-        RainDance,
-        SunnyDay,
-        Crunch,
-        MirrorCoat,
-        PsychUp,
-        ExtremeSpeed,
-        AncientPower,
-        ShadowBall,
-        FutureSight,
-        RockSmash,
-        Whirlpool,
-        BeatUp,
-        FakeOut,
-        Uproar,
-        Stockpile,
-        SpitUp,
-        Swallow,
-        HeatWave,
-        Hail,
-        Torment,
-        Flatter,
-        WillOWisp,
-        Memento,
-        Facade,
-        FocusPunch,
-        SmellingSalts,
-        FollowMe,
-        NaturePower,
-        Charge,
-        Taunt,
-        HelpingHand,
-        Trick,
-        RolePlay,
-        Wish,
-        Assist,
-        Ingrain,
-        Superpower,
-        MagicCoat,
-        Recycle,
-        Revenge,
-        BrickBreak,
-        Yawn,
-        KnockOff,
-        Endeavor,
-        Eruption,
-        SkillSwap,
-        Imprison,
-        Refresh,
-        Grudge,
-        Snatch,
-        SecretPower,
-        Dive,
-        ArmThrust,
-        Camouflage,
-        TailGlow,
-        LusterPurge,
-        MistBall,
-        FeatherDance,
-        TeeterDance,
-        BlazeKick,
-        MudSport,
-        IceBall,
-        NeedleArm,
-        SlackOff,
-        HyperVoice,
-        PoisonFang,
-        CrushClaw,
-        BlastBurn,
-        HydroCannon,
-        MeteorMash,
-        Astonish,
-        WeatherBall,
-        Aromatherapy,
-        FakeTears,
-        AirCutter,
-        Overheat,
-        OdorSleuth,
-        RockTomb,
-        SilverWind,
-        MetalSound,
-        GrassWhistle,
-        Tickle,
-        CosmicPower,
-        WaterSpout,
-        SignalBeam,
-        ShadowPunch,
-        Extrasensory,
-        SkyUppercut,
-        SandTomb,
-        SheerCold,
-        MuddyWater,
-        BulletSeed,
-        AerialAce,
-        IcicleSpear,
-        IronDefense,
-        Block,
-        Howl,
-        DragonClaw,
-        FrenzyPlant,
-        BulkUp,
-        Bounce,
-        MudShot,
-        PoisonTail,
-        Covet,
-        VoltTackle,
-        MagicalLeaf,
-        WaterSport,
-        CalmMind,
-        LeafBlade,
-        DragonDance,
-        RockBlast,
-        ShockWave,
-        WaterPulse,
-        DoomDesire,
-        PsychoBoost,
-        Roost,
-        Gravity,
-        MiracleEye,
-        WakeUpSlap,
-        HammerArm,
-        GyroBall,
-        HealingWish,
-        Brine,
-        NaturalGift,
-        Feint,
-        Pluck,
-        Tailwind,
-        Acupressure,
-        MetalBurst,
-        Uturn,
-        CloseCombat,
-        Payback,
-        Assurance,
-        Embargo,
-        Fling,
-        PsychoShift,
-        TrumpCard,
-        HealBlock,
-        WringOut,
-        PowerTrick,
-        GastroAcid,
-        LuckyChant,
-        MeFirst,
-        Copycat,
-        PowerSwap,
-        GuardSwap,
-        Punishment,
-        LastResort,
-        WorrySeed,
-        SuckerPunch,
-        ToxicSpikes,
-        HeartSwap,
-        AquaRing,
-        MagnetRise,
-        FlareBlitz,
-        ForcePalm,
-        AuraSphere,
-        RockPolish,
-        PoisonJab,
-        DarkPulse,
-        NightSlash,
-        AquaTail,
-        SeedBomb,
-        AirSlash,
-        XScissor,
-        BugBuzz,
-        DragonPulse,
-        DragonRush,
-        PowerGem,
-        DrainPunch,
-        VacuumWave,
-        FocusBlast,
-        EnergyBall,
-        BraveBird,
-        EarthPower,
-        Switcheroo,
-        GigaImpact,
-        NastyPlot,
-        BulletPunch,
-        Avalanche,
-        IceShard,
-        ShadowClaw,
-        ThunderFang,
-        IceFang,
-        FireFang,
-        ShadowSneak,
-        MudBomb,
-        PsychoCut,
-        ZenHeadbutt,
-        MirrorShot,
-        FlashCannon,
-        RockClimb,
-        Defog,
-        TrickRoom,
-        DracoMeteor,
-        Discharge,
-        LavaPlume,
-        LeafStorm,
-        PowerWhip,
-        RockWrecker,
-        CrossPoison,
-        GunkShot,
-        IronHead,
-        MagnetBomb,
-        StoneEdge,
-        Captivate,
-        StealthRock,
-        GrassKnot,
-        Chatter,
-        Judgment,
-        BugBite,
-        ChargeBeam,
-        WoodHammer,
-        AquaJet,
-        AttackOrder,
-        DefendOrder,
-        HealOrder,
-        HeadSmash,
-        DoubleHit,
-        RoarofTime,
-        SpacialRend,
-        LunarDance,
-        CrushGrip,
-        MagmaStorm,
-        DarkVoid,
-        SeedFlare,
-        OminousWind,
-        ShadowForce,
-        HoneClaws,
-        WideGuard,
-        GuardSplit,
-        PowerSplit,
-        WonderRoom,
-        Psyshock,
-        Venoshock,
-        Autotomize,
-        RagePowder,
-        Telekinesis,
-        MagicRoom,
-        SmackDown,
-        StormThrow,
-        FlameBurst,
-        SludgeWave,
-        QuiverDance,
-        HeavySlam,
-        Synchronoise,
-        ElectroBall,
-        Soak,
-        FlameCharge,
-        Coil,
-        LowSweep,
-        AcidSpray,
-        FoulPlay,
-        SimpleBeam,
-        Entrainment,
-        AfterYou,
-        Round,
-        EchoedVoice,
-        ChipAway,
-        ClearSmog,
-        StoredPower,
-        QuickGuard,
-        AllySwitch,
-        Scald,
-        ShellSmash,
-        HealPulse,
-        Hex,
-        SkyDrop,
-        ShiftGear,
-        CircleThrow,
-        Incinerate,
-        Quash,
-        Acrobatics,
-        ReflectType,
-        Retaliate,
-        FinalGambit,
-        Bestow,
-        Inferno,
-        WaterPledge,
-        FirePledge,
-        GrassPledge,
-        VoltSwitch,
-        StruggleBug,
-        Bulldoze,
-        FrostBreath,
-        DragonTail,
-        WorkUp,
-        Electroweb,
-        WildCharge,
-        DrillRun,
-        DualChop,
-        HeartStamp,
-        HornLeech,
-        SacredSword,
-        RazorShell,
-        HeatCrash,
-        LeafTornado,
-        Steamroller,
-        CottonGuard,
-        NightDaze,
-        Psystrike,
-        TailSlap,
-        Hurricane,
-        HeadCharge,
-        GearGrind,
-        SearingShot,
-        TechnoBlast,
-        RelicSong,
-        SecretSword,
-        Glaciate,
-        BoltStrike,
-        BlueFlare,
-        FieryDance,
-        FreezeShock,
-        IceBurn,
-        Snarl,
-        IcicleCrash,
-        Vcreate,
-        FusionFlare,
-        FusionBolt,
-        FlyingPress,
-        MatBlock,
-        Belch,
-        Rototiller,
-        StickyWeb,
-        FellStinger,
-        PhantomForce,
-        TrickorTreat,
-        NobleRoar,
-        IonDeluge,
-        ParabolicCharge,
-        ForestsCurse,
-        PetalBlizzard,
-        FreezeDry,
-        DisarmingVoice,
-        PartingShot,
-        TopsyTurvy,
-        DrainingKiss,
-        CraftyShield,
-        FlowerShield,
-        GrassyTerrain,
-        MistyTerrain,
-        Electrify,
-        PlayRough,
-        FairyWind,
-        Moonblast,
-        Boomburst,
-        FairyLock,
-        KingsShield,
-        PlayNice,
-        Confide,
-        DiamondStorm,
-        SteamEruption,
-        HyperspaceHole,
-        WaterShuriken,
-        MysticalFire,
-        SpikyShield,
-        AromaticMist,
-        EerieImpulse,
-        VenomDrench,
-        Powder,
-        Geomancy,
-        MagneticFlux,
-        HappyHour,
-        ElectricTerrain,
-        DazzlingGleam,
-        Celebrate,
-        HoldHands,
-        BabyDollEyes,
-        Nuzzle,
-        HoldBack,
-        Infestation,
-        PowerUpPunch,
-        OblivionWing,
-        ThousandArrows,
-        ThousandWaves,
-        LandsWrath,
-        LightofRuin,
-        OriginPulse,
-        PrecipiceBlades,
-        DragonAscent,
-        HyperspaceFury,
-        BreakneckBlitzP,
-        BreakneckBlitzS,
-        AllOutPummelingP,
-        AllOutPummelingS,
-        SupersonicSkystrikeP,
-        SupersonicSkystrikeS,
-        AcidDownpourP,
-        AcidDownpourS,
-        TectonicRageP,
-        TectonicRageS,
-        ContinentalCrushP,
-        ContinentalCrushS,
-        SavageSpinOutP,
-        SavageSpinOutS,
-        NeverEndingNightmareP,
-        NeverEndingNightmareS,
-        CorkscrewCrashP,
-        CorkscrewCrashS,
-        InfernoOverdriveP,
-        InfernoOverdriveS,
-        HydroVortexP,
-        HydroVortexS,
-        BloomDoomP,
-        BloomDoomS,
-        GigavoltHavocP,
-        GigavoltHavocS,
-        ShatteredPsycheP,
-        ShatteredPsycheS,
-        SubzeroSlammerP,
-        SubzeroSlammerS,
-        DevastatingDrakeP,
-        DevastatingDrakeS,
-        BlackHoleEclipseP,
-        BlackHoleEclipseS,
-        TwinkleTackleP,
-        TwinkleTackleS,
-        Catastropika,
-        ShoreUp,
-        FirstImpression,
-        BanefulBunker,
-        SpiritShackle,
-        DarkestLariat,
-        SparklingAria,
-        IceHammer,
-        FloralHealing,
-        HighHorsepower,
-        StrengthSap,
-        SolarBlade,
-        Leafage,
-        Spotlight,
-        ToxicThread,
-        LaserFocus,
-        GearUp,
-        ThroatChop,
-        PollenPuff,
-        AnchorShot,
-        PsychicTerrain,
-        Lunge,
-        FireLash,
-        PowerTrip,
-        BurnUp,
-        SpeedSwap,
-        SmartStrike,
-        Purify,
-        RevelationDance,
-        CoreEnforcer,
-        TropKick,
-        Instruct,
-        BeakBlast,
-        ClangingScales,
-        DragonHammer,
-        BrutalSwing,
-        AuroraVeil,
-        SinisterArrowRaid,
-        MaliciousMoonsault,
-        OceanicOperetta,
-        GuardianofAlola,
-        SoulStealing7StarStrike,
-        StokedSparksurfer,
-        PulverizingPancake,
-        ExtremeEvoboost,
-        GenesisSupernova,
-        ShellTrap,
-        FleurCannon,
-        PsychicFangs,
-        StompingTantrum,
-        ShadowBone,
-        Accelerock,
-        Liquidation,
-        PrismaticLaser,
-        SpectralThief,
-        SunsteelStrike,
-        MoongeistBeam,
-        TearfulLook,
-        ZingZap,
-        NaturesMadness,
-        MultiAttack,
-        TenMVoltThunderbolt,
-        MindBlown,
-        PlasmaFists,
-        PhotonGeyser,
-        LightThatBurnstheSky,
-        SearingSunrazeSmash,
-        MenacingMoonrazeMaelstrom,
-        LetsSnuggleForever,
-        SplinteredStormshards,
-        ClangorousSoulblaze,
-        ZippyZap,
-        SplishySplash,
-        FloatyFall,
-        PikaPapow,
-        BouncyBubble,
-        BuzzyBuzz,
-        SizzlySlide,
-        GlitzyGlow,
-        BaddyBad,
-        SappySeed,
-        FreezyFrost,
-        SparklySwirl,
-        VeeveeVolley,
-        DoubleIronBash,
-        MaxGuard,
-        DynamaxCannon,
-        SnipeShot,
-        JawLock,
-        StuffCheeks,
-        NoRetreat,
-        TarShot,
-        MagicPowder,
-        DragonDarts,
-        Teatime,
-        Octolock,
-        BoltBeak,
-        FishiousRend,
-        CourtChange,
-        MaxFlare,
-        MaxFlutterby,
-        MaxLightning,
-        MaxStrike,
-        MaxKnuckle,
-        MaxPhantasm,
-        MaxHailstorm,
-        MaxOoze,
-        MaxGeyser,
-        MaxAirstream,
-        MaxStarfall,
-        MaxWyrmwind,
-        MaxMindstorm,
-        MaxRockfall,
-        MaxQuake,
-        MaxDarkness,
-        MaxOvergrowth,
-        MaxSteelspike,
-        ClangorousSoul,
-        BodyPress,
-        Decorate,
-        DrumBeating,
-        SnapTrap,
-        PyroBall,
-        BehemothBlade,
-        BehemothBash,
-        AuraWheel,
-        BreakingSwipe,
-        BranchPoke,
-        Overdrive,
-        AppleAcid,
-        GravApple,
-        SpiritBreak,
-        StrangeSteam,
-        LifeDew,
-        Obstruct,
-        FalseSurrender,
-        MeteorAssault,
-        Eternabeam,
-        SteelBeam,
-        ExpandingForce,
-        SteelRoller,
-        ScaleShot,
-        MeteorBeam,
-        ShellSideArm,
-        MistyExplosion,
-        GrassyGlide,
-        RisingVoltage,
-        TerrainPulse,
-        SkitterSmack,
-        BurningJealousy,
-        LashOut,
-        Poltergeist,
-        CorrosiveGas,
-        Coaching,
-        FlipTurn,
-        TripleAxel,
-        DualWingbeat,
-        ScorchingSands,
-        JungleHealing,
-        WickedBlow,
-        SurgingStrikes,
-        ThunderCage,
-        DragonEnergy,
-        FreezingGlare,
-        FieryWrath,
-        ThunderousKick,
-        GlacialLance,
-        AstralBarrage,
-        EerieSpell,
-        MAX_COUNT,
-    }
-
     public class BulkImporterPlugin : IPlugin
     {
         public string Name => nameof(BulkImporter);
-        public int Priority => 1; // Loading order, lowest is first.
+        public int Priority => -1; // Loading order, lowest is first.
 
         // Initialized on plugin load
         public ISaveFileProvider SaveFileEditor { get; private set; } = null!;
@@ -853,7 +17,7 @@ namespace BulkImporter
         // Random number generator for form generation
         Random random = new Random();
 
-        // Forms
+        // UI Forms
         private Form form = new Form();
         private TextBox input = new TextBox();
 
@@ -865,8 +29,8 @@ namespace BulkImporter
         private NumericUpDown minIVValue = new NumericUpDown();
 
         private CheckedListBox typeSelection = new CheckedListBox();
-        private RadioButton considerFutureTypesYes = new RadioButton();
-        private RadioButton considerFutureTypesNo = new RadioButton();
+        private CheckBox considerFutureTypesYes = new CheckBox();
+        private CheckBox avoidDuplicates = new CheckBox();
 
         // Pokemon forms -- doesn't include battle-only forms (i.e. Megas) or Alolan variants
         public int[] burmyForms = { 412, 905, 906 };
@@ -874,7 +38,82 @@ namespace BulkImporter
         public int[] scatterbugForms = { 666, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981 };
         public int[] flabebeForms = { 669, 986, 987, 988, 989 };
         public int[] oricorioForms = { 741, 1021, 1022, 1023 };
-        public int[] miniorForms = { 774, 1045, 1046, 1047, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057};
+        public int[] miniorForms = { 774, 1045, 1046, 1047, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057 };
+
+        public bool ValidatePokemonType(PKM pkmn, EvolutionTree evoTree, int generation, GameVersion gameVersion)
+        {
+            bool returnValue = false;
+            var selectedTypes = typeSelection.CheckedItems;
+
+            // Type validation. The first check looks for all types being selected, no types being selected, or Select All being checked; any of these
+            // means that any Pokemon type goes.
+            if (selectedTypes.Contains("Select All") || !selectedTypes.Contains("Select All") && selectedTypes.Count == 18 || selectedTypes.Count == 0)
+            {
+                returnValue = true;
+            }
+            else
+            {
+                // Loop through each type in the types selected by the user. First check the Pokemon's primary type. If it doesn't match, check the secondary type
+                // (provided the Pokemon has one). Finally, if the user wants to consu
+                foreach (string type in selectedTypes)
+                {
+                    if (pkmn.PersonalInfo.Type1 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == pkmn.PersonalInfo.Type1)
+                    {
+                        returnValue = true;
+                    }
+                    else if (pkmn.PersonalInfo.Type2 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == pkmn.PersonalInfo.Type2)
+                    {
+                        returnValue = true;
+                    }
+                }
+            }
+
+            // If the user wants to, look through the possible future evolutions to see if any of them fulfill the type requirements
+            if (!returnValue && considerFutureTypesYes.Checked)
+            {
+                var evoSpecies = evoTree.GetEvolutionsAndPreEvolutions(pkmn.Species, pkmn.Form);
+
+                foreach (var species in evoSpecies)
+                {
+                    PKM evolvedPkmn = EntityBlank.GetBlank(generation, gameVersion);
+                    evolvedPkmn.Species = species.Species;
+                    evolvedPkmn.Form = species.Form;
+
+                    foreach (string type in selectedTypes)
+                    {
+                        if (evolvedPkmn.PersonalInfo.Type1 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == evolvedPkmn.PersonalInfo.Type1)
+                        {
+                            returnValue = true;
+                        }
+                        else if (evolvedPkmn.PersonalInfo.Type2 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == evolvedPkmn.PersonalInfo.Type2)
+                        {
+                            returnValue = true;
+                        }
+                    }
+                }
+            }
+
+            return returnValue;
+        }
+
+        public ushort GenerateMove(ReadOnlySpan<ushort> baseMoves, ushort[] eggMoves, int moveSlot)
+        {
+            ushort returnValue = 0;
+
+            int eggMoveRand = (int)((random.Next(1, 100)) / (eggMoveChance.Value / 100));
+
+            if (eggMoveRand < eggMoveChance.Value)
+            {
+                ushort moveIndex = (ushort)(random.Next(0, eggMoves.Length));
+                returnValue = eggMoves[moveIndex];
+            }
+            else if (moveSlot < baseMoves.Length)
+            {
+                returnValue = baseMoves[moveSlot];
+            }
+
+            return returnValue;
+        }
 
         // Plugin initialization
         public void Initialize(params object[] args)
@@ -900,26 +139,27 @@ namespace BulkImporter
         // Creating additional controls for the menu
         private void AddPluginControl(ToolStripDropDownItem tools)
         {
-            var ctrl = new ToolStripMenuItem(Name);
+            var ctrl = new ToolStripMenuItem("Egg Generator");
             tools.DropDownItems.Add(ctrl);
-
-            var c2 = new ToolStripMenuItem($"Import Pokemon");
-            c2.Click += (sender, eventArgs) => generateForm();
-            ctrl.DropDownItems.Add(c2);
+            ctrl.Click += (sender, eventArgs) => generateForm();
             Console.WriteLine($"{Name} added menu items.");
         }
 
+        // Create the UI for the importer
         public void generateForm()
         {
+            SaveFile sav = SaveFileEditor.SAV; // current savefile
+
             List<Control> formControls = new List<Control>();
             Button createButton = new Button();
 
             // Set up form
-            form.Size = new System.Drawing.Size(390, 450);
-            form.Name = "Bulk Importer";
+            form.Size = new System.Drawing.Size(390, 500);
+            form.Name = "Egg Generator";
 
             // Set up Type Selection
-            formControls.Add(new Label {
+            formControls.Add(new Label
+            {
                 Location = new System.Drawing.Point(8, 10),
                 AutoSize = true,
                 Text = "Types",
@@ -942,15 +182,29 @@ namespace BulkImporter
             considerFutureTypesYes.Location = new System.Drawing.Point(10, 335);
             considerFutureTypesYes.TextAlign = System.Drawing.ContentAlignment.TopLeft;
             considerFutureTypesYes.AutoSize = true;
-
-            considerFutureTypesNo.Text = "No";
-            considerFutureTypesNo.Location = new System.Drawing.Point(10, 350);
-            considerFutureTypesNo.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            considerFutureTypesNo.AutoSize = true;
+            considerFutureTypesYes.Checked = false;
+            considerFutureTypesYes.Name = "considerFutureTypes";
 
             formControls.Add(typeSelection);
             formControls.Add(considerFutureTypesYes);
-            formControls.Add(considerFutureTypesNo);
+
+            formControls.Add(new Label
+            {
+                Location = new System.Drawing.Point(8, 370),
+                AutoSize = true,
+                Text = "Avoid duplicates if possible?",
+                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
+            });
+
+            avoidDuplicates.Text = "Yes";
+            avoidDuplicates.Location = new System.Drawing.Point(10, 385);
+            avoidDuplicates.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            avoidDuplicates.AutoSize = true;
+            avoidDuplicates.Checked = false;
+            avoidDuplicates.Name = "noDuplicates";
+
+            formControls.Add(typeSelection);
+            formControls.Add(avoidDuplicates);
 
             // Set up the input for the number of pokemon to generate
             formControls.Add(new Label
@@ -961,7 +215,7 @@ namespace BulkImporter
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
-            numberToGenerate.Value = 50;
+            numberToGenerate.Value = 10;
             numberToGenerate.Maximum = 100;
             numberToGenerate.Minimum = 1;
             numberToGenerate.Location = new System.Drawing.Point(170, 25);
@@ -1009,9 +263,12 @@ namespace BulkImporter
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
+            ToolTip shinyChanceToolTip = new ToolTip();
+            shinyChanceToolTip.SetToolTip(shinyChance, "In Gen 2, this will overwrite IV settings.");
+
             shinyChance.Value = 1;
             shinyChance.Maximum = 100;
-            shinyChance.Minimum = 1;
+            shinyChance.Minimum = 0;
             shinyChance.Location = new System.Drawing.Point(170, 160);
 
             formControls.Add(shinyChance);
@@ -1027,7 +284,7 @@ namespace BulkImporter
 
             eggMoveChance.Value = 25;
             eggMoveChance.Maximum = 100;
-            eggMoveChance.Minimum = 1;
+            eggMoveChance.Minimum = 0;
             eggMoveChance.Location = new System.Drawing.Point(170, 205);
 
             formControls.Add(eggMoveChance);
@@ -1043,15 +300,20 @@ namespace BulkImporter
 
             hiddenAbilityChance.Value = 25;
             hiddenAbilityChance.Maximum = 100;
-            hiddenAbilityChance.Minimum = 1;
+            hiddenAbilityChance.Minimum = 0;
             hiddenAbilityChance.Location = new System.Drawing.Point(170, 250);
+
+            if (sav.Generation < 5)
+            {
+                hiddenAbilityChance.Enabled = false;
+            }
 
             formControls.Add(hiddenAbilityChance);
 
             // Set up "Add to Boxes" button
             createButton.Text = "Generate Pokemon";
             createButton.Size = new System.Drawing.Size(185, 20);
-            createButton.Location = new System.Drawing.Point(100, 380);
+            createButton.Location = new System.Drawing.Point(100, 420);
             createButton.Click += new EventHandler(AddToBoxesButtonClick);
 
             formControls.Add(createButton);
@@ -1081,133 +343,231 @@ namespace BulkImporter
 
         public void AddToBoxesButtonClick(Object sender, EventArgs events)
         {
-            // Declare variables
-            string directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); //directory the BulkImporter.dll is in
-            string game = ""; // game version (ie oras, hgss, etc.)
-            int numPokemonInGenDex = 0; // number of pokemon in the dex for the given generation
-
             SaveFile sav = SaveFileEditor.SAV; // current savefile
+            int duplicateSkipCounter = 0; // used for skipping duplicate Pokemon when generating 'em 
 
-            List<string> eggObtainablePkmn = new List<string>(); // list of pkmn obtainable by egg for specified generation
-            List<PKM> pokemonList = new List<PKM>(); // list of pkmn to add to boxes
+            List<PKM> generatedPokemon = new List<PKM>(); // the pokemon to add to the boxes at the end of all this
+            List<int> speciesAlreadyAdded = new List<int>(); // a list of the ints of species already added to generatedPokemon. Helps reduce -- but not eliminate -- duplicates.
 
-            List<RawPokemon> rawPokemonList = JsonConvert.DeserializeObject<List<RawPokemon>>(File.ReadAllText(directory + "/BulkImporterData/pokemon.json")) ?? new List<RawPokemon>(); // raw data on all pokemon obtainable by egg
-            
-            // Get the list of egg-obtainable pokemon for the save file's generation
-            switch (sav.Generation)
+            // Start by making sure the game can generate eggs; if it cannot, the generator will not work and inform the user as such
+            if (!Breeding.CanGameGenerateEggs(sav.Context.GetSingleGameVersion()))
             {
-                case 2:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_2.json")) ?? new List<string>();
-                    break;
-                case 3:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_3.json")) ?? new List<string>();
-                    break;
-                case 4:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_4.json")) ?? new List<string>();
-                    break;
-                case 5:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_5.json")) ?? new List<string>();
-                    break;
-                case 6:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_6.json")) ?? new List<string>();
-                    break;
-                case 7:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_7.json")) ?? new List<string>();
-                    break;
-                case 8:
-                    eggObtainablePkmn = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(directory + "/BulkImporterData/pokedex/gen_8.json")) ?? new List<string>();
-                    break;
-                default:
-                    break;
+                MessageBox.Show("Error! This game doesn't support egg generation. Please try another game. Game version " + sav.Context.GetSingleGameVersion().ToString());
+                return;
             }
-
-            numPokemonInGenDex = eggObtainablePkmn.Count;
-
-            // Check game version, used for determining specific movesets
-            if (sav.Version == GameVersion.GD || sav.Version == GameVersion.SV)
-            {
-                game = "gold/silver";
-            }
-            else if (sav.Version == GameVersion.C)
-            {
-                game = "crystal";
-            }
-            else if (sav.Version == GameVersion.R || sav.Version == GameVersion.S)
-            {
-                game = "ruby/sapphire";
-            }
-            else if (sav.Version == GameVersion.E)
-            {
-                game = "emerald";
-            }
-            else if (sav.Version == GameVersion.FR || sav.Version == GameVersion.LG)
-            {
-                game = "fire_red/leaf_green";
-            }
-            else if (sav.Version == GameVersion.D || sav.Version == GameVersion.S)
-            {
-                game = "diamond/pearl";
-            }
-            else if (sav.Version == GameVersion.Pt)
-            {
-                game = "platinum";
-            }
-            else if (sav.Version == GameVersion.HG || sav.Version == GameVersion.SS)
-            {
-                game = "heart_gold/soul_silver";
-            }
-            else if (sav.Version == GameVersion.W || sav.Version == GameVersion.B)
-            {
-                game = "black/white";
-            }
-            else if (sav.Version == GameVersion.W2 || sav.Version == GameVersion.B2)
-            {
-                game = "black_2/white_2";
-            }
-            else if (sav.Version == GameVersion.OR || sav.Version == GameVersion.AS)
-            {
-                game = "omega_ruby/alpha_sapphire";
-            }
-            else if (sav.Version == GameVersion.X || sav.Version == GameVersion.Y)
-            {
-                game = "x/y";
-            }
-            else if (sav.Version == GameVersion.SN || sav.Version == GameVersion.MN)
-            {
-                game = "sun/moon";
-            }
-            else if (sav.Version == GameVersion.US || sav.Version == GameVersion.UM)
-            {
-                game = "ultra_sun/ultra_moon";
-            }
-            else if (sav.Version == GameVersion.SW || sav.Version == GameVersion.SH)
-            {
-                game = "sword/shield";
-            }
-
-            // Loop until the number of Pokemon generated equals numberToGenerate
+            // loop for generating pokemon
             for (int i = 0; i < numberToGenerate.Value; i++)
             {
-                int pokeDexNum = random.Next(0, numPokemonInGenDex);
-                RawPokemon rawPokemon = rawPokemonList[pokeDexNum];
+                // Determine the species. Make sure it can come from an egg, and if needed, drop it to the lowest pre-evolution possible.
+                GameVersion version = sav.Version;
 
-                /*int pokeDexNum = random.Next(1, sav.MaxSpeciesID);
-
-                EncounterEgg encounterEgg = new EncounterEgg(pokeDexNum, 0, 1, sav.Generation, (GameVersion)sav.Version);
-                PKM pkmn = encounterEgg.ConvertToPKM(sav);
-
-                IEnumerable<EncounterEgg> generatedEgg = EncounterEggGenerator.GenerateEggs(pkmn, sav.Generation);
-
-                foreach (var e in generatedEgg)
+                if (version == GameVersion.RS)
                 {
-                    PKM pokemon = e.ConvertToPKM(sav);
+                    version = GameVersion.R;
+                }
 
+                PKM pkmn = EntityBlank.GetBlank(sav.Generation, version);
+                pkmn.Species = (ushort)random.Next(0, sav.MaxSpeciesID);
+                pkmn.SetSuggestedFormArgument(pkmn.Species);
 
-                }*/
+                EvolutionTree evoTree = EvolutionTree.GetEvolutionTree(pkmn.Context);
+                var baseForm = evoTree.GetBaseSpeciesForm(pkmn.Species, pkmn.Form);
+
+                // Make sure the Pokemon actually exists in the game, and can come from an egg. If it can't, decrease i by one and continue the loop.
+                // i gets decreased to keep the # of pokemon generated equal to numberToGenerate.
+                if (!sav.Personal.IsSpeciesInGame(baseForm.Species) || !Breeding.CanHatchAsEgg(baseForm.Species) || (Species)baseForm.Species == Species.Shedinja)
+                {
+                    i--;
+                    continue;
+                }
+
+                pkmn.Species = baseForm.Species;
+                pkmn.SetSuggestedFormArgument(pkmn.Species);
+
+                // Make sure the Pokemon's type is OK
+                if (!ValidatePokemonType(pkmn, evoTree, sav.Generation, sav.Version))
+                {
+                    i--;
+                    continue;
+                }
+
+                // If the user wants to avoid duplicates, do a little check to see if we should re-start the for loop. To avoid getting stuck in an
+                // endless loop while still maintaining the number of Pokemon to generate, the program will skip a max of 10 Pokemon; the 11th will be
+                // added even if it's a duplicate species, and then the counter will be reset.
+                if (avoidDuplicates.Checked)
+                {
+                    // The below statement will restart the for loop; the rest just carry on after doing their thing
+                    if (speciesAlreadyAdded.Contains(baseForm.Species) && duplicateSkipCounter < 10)
+                    {
+                        duplicateSkipCounter++;
+                        i--;
+                        continue;
+                    }
+                    else if (duplicateSkipCounter >= 10)
+                    {
+                        duplicateSkipCounter = 0;
+                    }
+                    else
+                    {
+                        speciesAlreadyAdded.Add(baseForm.Species);
+                    }
+                }
+
+                // With all the checks out of the way, various attributes can be set.
+
+                EncounterEgg pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
+                LegalityAnalysis legality = new LegalityAnalysis(pkmn);
+                pkmn = pkmnAsEgg.ConvertToPKM(sav);
+
+                pkmn.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, sav.Generation);
+                pkmn.IsNicknamed = true;
+                pkmn.OT_Friendship = EggStateLegality.GetMinimumEggHatchCycles(pkmn);
+                pkmn.Met_Location = 0;
+                pkmn.Gender = pkmn.GetSaneGender();
+
+                // There are a lot of quirks with how eggs are handled between generations, and even game versions; this collection of statements does some
+                // fine-tuning to account for that.
+                if (sav.Version == GameVersion.BD || sav.Version == GameVersion.SP || sav.Version == GameVersion.BDSP)
+                {
+                    pkmn.Met_Location = 65535; // Eggs have no met location in BDSP
+                }
+                else if (sav.Version == GameVersion.Pt)
+                {
+                    pkmn.Egg_Location = 2000; // Daycare
+                    pkmn.IsNicknamed = false;
+                    pkmn.Met_Level = 0;
+                    pkmn.Version = (int)sav.Version;
+                }
+                else if (sav.Generation == 4)
+                {
+                    // HGSS Eggs aren't nicknamed
+                    pkmn.IsNicknamed = false;
+                    pkmn.Version = (int)sav.Context.GetSingleGameVersion();
+                    pkmn.Egg_Location = 2000;
+                }
+                else if (sav.Version == GameVersion.FRLG || sav.Version == GameVersion.FR || sav.Version == GameVersion.LG)
+                {
+                    pkmn.Met_Location = Locations.HatchLocationFRLG; // Four Island -- if location isn't set, it defaults to Littleroot Town
+                }
+                else if (sav.Version == GameVersion.RSE || sav.Version == GameVersion.RS || sav.Version == GameVersion.R || sav.Version == GameVersion.S || sav.Version == GameVersion.E)
+                {
+                    pkmn.Met_Location = Locations.HatchLocationRSE; // Route 117 -- if location isn't set, it defaults to Littleroot Town
+                    pkmn.Version = (int)sav.Context.GetSingleGameVersion();
+                }
+                else if (sav.Generation == 2)
+                {
+                    pkmn.SetNickname("EGG");
+                }
+
+                // Set the IVs based on min/max values
+                pkmn.IV_HP = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+                pkmn.IV_ATK = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+                pkmn.IV_DEF = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+                pkmn.IV_SPA = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+                pkmn.IV_SPD = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+                pkmn.IV_SPE = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+
+                // Set ability
+                pkmn.SetAbilityIndex(random.Next(0, 2));
+                if (sav.Generation >= 5)
+                {
+                    int haValue = (int)((random.Next(1, 100)) / (hiddenAbilityChance.Value / 100));
+
+                    if (haValue <= hiddenAbilityChance.Value)
+                    {
+                        pkmn.SetAbilityIndex(2); // set hidden ability
+                    }
+                }
+
+                // Determine if Pokemon should be shiny
+                if (shinyChance.Value > 0)
+                {
+                    int shinyValue = (int)((random.Next(1, 100)) / (shinyChance.Value / 100));
+
+                    if (shinyValue <= shinyChance.Value)
+                    {
+                        pkmn.SetIsShiny(true);
+                    }
+                    else
+                    {
+                        pkmn.SetIsShiny(false);
+                    }
+                }
+
+                // Determine moves
+                try
+                {
+                    Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
+                    var baseMoves = learnset.GetBaseEggMoves(sav.Generation);
+                    var eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
+
+                    // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
+                    // so there's no need to add any logic for handling situations where the user only wants base moves
+                    if (eggMoveChance.Value > 0 && eggMoves.Length > 0)
+                    {
+                        ushort nextMoveIndex = 0;
+                        int numTriesToGetMove = 0;
+                        do
+                        {
+                            nextMoveIndex = GenerateMove(baseMoves, eggMoves, pkmn.Moves.Length);
+                            pkmn.PushMove(nextMoveIndex);
+                            numTriesToGetMove++;
+
+                        } while (pkmn.MoveCount < 5 && nextMoveIndex != 0 && numTriesToGetMove < 20);
+
+                        pkmn.FixMoves();
+
+                        if (sav.Generation > 5)
+                        {
+                            pkmn.SetRelearnMoves(pkmn.Moves);
+                        }
+
+                        Span<ushort> fixedMoves = stackalloc ushort[4];
+                        bool movesAreGood = MoveBreed.GetExpectedMoves(pkmn.Moves, pkmnAsEgg, fixedMoves);
+
+                        for (int j = 0; j < 4; j++)
+                        {
+                            pkmn.SetMove(j, fixedMoves[j]);
+                            pkmn.SetSuggestedMovePP(j);
+                        }
+
+                        if (sav.Generation > 5)
+                        {
+                            LegalityAnalysis legalityAnalysis = new LegalityAnalysis(pkmn);
+                            var moves = MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, pkmnAsEgg);
+
+                            for (int j = 0; j < 4; j++)
+                            {
+                                pkmn.SetMove(j, moves[j]);
+                                pkmn.SetSuggestedMovePP(j);
+                                pkmn.SetRelearnMove(j, moves[j]);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                    MessageBox.Show(e.StackTrace);
+                }
+
+                pkmn.IsEgg = true;
+                legality = new LegalityAnalysis(pkmn);
+                string report = legality.Report();
+
+                if (report.Contains("Hidden Ability"))
+                {
+                    pkmn.SetAbilityIndex(random.Next(0, 2));
+                }
+
+                // Add the generated Pokemon
+                pkmn.Valid = legality.Valid;
+                generatedPokemon.Add(pkmn);
             }
-                                    
-            sav.ImportPKMs(pokemonList);
+
+            sav.ImportPKMs(generatedPokemon);
             SaveFileEditor.ReloadSlots();
+
         }
 
         public void NotifySaveLoaded()

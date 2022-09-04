@@ -11,43 +11,7 @@
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="PKHeX.Core" Version="21.11.27" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="BulkImporterData\pokedex\gen_3.json">
-      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
-    </None>
-    <None Update="BulkImporterData\pokedex\gen_4.json">
-      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
-    </None>
-    <None Update="BulkImporterData\pokedex\gen_5.json">
-      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
-    </None>
-    <None Update="BulkImporterData\pokedex\gen_6.json">
-      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
-    </None>
-    <None Update="BulkImporterData\pokedex\gen_7.json">
-      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
-    </None>
-    <None Update="BulkImporterData\pokedex\gen_8.json">
-      <CopyToOutputDirectory>Resource</CopyToOutputDirectory>
-    </None>
+    <PackageReference Include="PKHeX.Core" Version="22.8.31" />
   </ItemGroup>
 
 </Project>
