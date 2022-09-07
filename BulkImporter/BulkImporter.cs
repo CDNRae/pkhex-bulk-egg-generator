@@ -8,8 +8,9 @@ namespace BulkImporter
     public class BulkImporterPlugin : IPlugin
     {
         public string Name => nameof(BulkImporter);
-        public int Priority => -1; // Loading order, lowest is first.
+        public int Priority => 1; // Loading order, lowest is first.
 
+        // Initialized on plugin load
         // Initialized on plugin load
         public ISaveFileProvider SaveFileEditor { get; private set; } = null!;
         public IPKMView PKMEditor { get; private set; } = null!;
@@ -32,117 +33,24 @@ namespace BulkImporter
         private CheckBox considerFutureTypesYes = new CheckBox();
         private CheckBox avoidDuplicates = new CheckBox();
 
-        // Pokemon forms -- doesn't include battle-only forms (i.e. Megas) or Alolan variants
-        public int[] burmyForms = { 412, 905, 906 };
-        public int[] shellosForms = { 422, 911 };
-        public int[] scatterbugForms = { 666, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981 };
-        public int[] flabebeForms = { 669, 986, 987, 988, 989 };
-        public int[] oricorioForms = { 741, 1021, 1022, 1023 };
-        public int[] miniorForms = { 774, 1045, 1046, 1047, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057 };
-
-        public bool ValidatePokemonType(PKM pkmn, EvolutionTree evoTree, int generation, GameVersion gameVersion)
-        {
-            bool returnValue = false;
-            var selectedTypes = typeSelection.CheckedItems;
-
-            // Type validation. The first check looks for all types being selected, no types being selected, or Select All being checked; any of these
-            // means that any Pokemon type goes.
-            if (selectedTypes.Contains("Select All") || !selectedTypes.Contains("Select All") && selectedTypes.Count == 18 || selectedTypes.Count == 0)
-            {
-                returnValue = true;
-            }
-            else
-            {
-                // Loop through each type in the types selected by the user. First check the Pokemon's primary type. If it doesn't match, check the secondary type
-                // (provided the Pokemon has one). Finally, if the user wants to consu
-                foreach (string type in selectedTypes)
-                {
-                    if (pkmn.PersonalInfo.Type1 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == pkmn.PersonalInfo.Type1)
-                    {
-                        returnValue = true;
-                    }
-                    else if (pkmn.PersonalInfo.Type2 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == pkmn.PersonalInfo.Type2)
-                    {
-                        returnValue = true;
-                    }
-                }
-            }
-
-            // If the user wants to, look through the possible future evolutions to see if any of them fulfill the type requirements
-            if (!returnValue && considerFutureTypesYes.Checked)
-            {
-                var evoSpecies = evoTree.GetEvolutionsAndPreEvolutions(pkmn.Species, pkmn.Form);
-
-                foreach (var species in evoSpecies)
-                {
-                    PKM evolvedPkmn = EntityBlank.GetBlank(generation, gameVersion);
-                    evolvedPkmn.Species = species.Species;
-                    evolvedPkmn.Form = species.Form;
-
-                    foreach (string type in selectedTypes)
-                    {
-                        if (evolvedPkmn.PersonalInfo.Type1 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == evolvedPkmn.PersonalInfo.Type1)
-                        {
-                            returnValue = true;
-                        }
-                        else if (evolvedPkmn.PersonalInfo.Type2 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == evolvedPkmn.PersonalInfo.Type2)
-                        {
-                            returnValue = true;
-                        }
-                    }
-                }
-            }
-
-            return returnValue;
-        }
-
-        public ushort GenerateMove(ReadOnlySpan<ushort> baseMoves, ushort[] eggMoves, int moveSlot)
-        {
-            ushort returnValue = 0;
-
-            int eggMoveRand = (int)((random.Next(1, 100)) / (eggMoveChance.Value / 100));
-
-            if (eggMoveRand < eggMoveChance.Value)
-            {
-                ushort moveIndex = (ushort)(random.Next(0, eggMoves.Length));
-                returnValue = eggMoves[moveIndex];
-            }
-            else if (moveSlot < baseMoves.Length)
-            {
-                returnValue = baseMoves[moveSlot];
-            }
-
-            return returnValue;
-        }
-
         // Plugin initialization
         public void Initialize(params object[] args)
         {
             Console.WriteLine($"Loading {Name}...");
+
             SaveFileEditor = (ISaveFileProvider)Array.Find(args, z => z is ISaveFileProvider);
             PKMEditor = (IPKMView)Array.Find(args, z => z is IPKMView);
+
             var menu = (ToolStrip)Array.Find(args, z => z is ToolStrip);
-            LoadMenuStrip(menu);
-            string[] pokemonTypes = { "Select All", "Normal", "Fire", "Fighting", "Water", "Flying", "Grass", "Poison", "Electric", "Ground", "Psychic", "Rock", "Ice", "Bug", "Dragon", "Ghost", "Dark", "Steel", "Fairy" };
-            typeSelection.Items.AddRange(pokemonTypes);
-        }
-
-        // Adding Plugin to PKHeX menu
-        private void LoadMenuStrip(ToolStrip menuStrip)
-        {
-            var items = menuStrip.Items;
+            var items = menu.Items;
             if (!(items.Find("Menu_Tools", false)[0] is ToolStripDropDownItem tools))
-                throw new ArgumentException(nameof(menuStrip));
-            AddPluginControl(tools);
-        }
+                return;
 
-        // Creating additional controls for the menu
-        private void AddPluginControl(ToolStripDropDownItem tools)
-        {
-            var ctrl = new ToolStripMenuItem("Egg Generator");
-            tools.DropDownItems.Add(ctrl);
-            ctrl.Click += (sender, eventArgs) => generateForm();
-            Console.WriteLine($"{Name} added menu items.");
+            var menuItem = new ToolStripMenuItem("Egg Generator");
+            menuItem.Click += (sender, eventArgs) => generateForm();
+            tools.DropDownItems.Add(menuItem);
+
+            NotifySaveLoaded();
         }
 
         // Create the UI for the importer
@@ -152,6 +60,9 @@ namespace BulkImporter
 
             List<Control> formControls = new List<Control>();
             Button createButton = new Button();
+
+            string[] pokemonTypes = { "Select All", "Normal", "Fire", "Fighting", "Water", "Flying", "Grass", "Poison", "Electric", "Ground", "Psychic", "Rock", "Ice", "Bug", "Dragon", "Ghost", "Dark", "Steel", "Fairy" };
+            typeSelection.Items.AddRange(pokemonTypes);
 
             // Set up form
             form.Size = new System.Drawing.Size(390, 500);
@@ -307,6 +218,10 @@ namespace BulkImporter
             {
                 hiddenAbilityChance.Enabled = false;
             }
+            else
+            {
+                hiddenAbilityChance.Enabled = true;
+            }
 
             formControls.Add(hiddenAbilityChance);
 
@@ -339,6 +254,81 @@ namespace BulkImporter
                     typeSelection.SetItemChecked(i, checkItems);
                 }
             }
+        }
+
+        public bool ValidatePokemonType(PKM pkmn, EvolutionTree evoTree, int generation, GameVersion gameVersion)
+        {
+            bool returnValue = false;
+            var selectedTypes = typeSelection.CheckedItems;
+
+            // Type validation. The first check looks for all types being selected, no types being selected, or Select All being checked; any of these
+            // means that any Pokemon type goes.
+            if (selectedTypes.Contains("Select All") || !selectedTypes.Contains("Select All") && selectedTypes.Count == 18 || selectedTypes.Count == 0)
+            {
+                returnValue = true;
+            }
+            else
+            {
+                // Loop through each type in the types selected by the user. First check the Pokemon's primary type. If it doesn't match, check the secondary type
+                // (provided the Pokemon has one). Finally, if the user wants to consu
+                foreach (string type in selectedTypes)
+                {
+                    if (pkmn.PersonalInfo.Type1 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == pkmn.PersonalInfo.Type1)
+                    {
+                        returnValue = true;
+                    }
+                    else if (pkmn.PersonalInfo.Type2 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == pkmn.PersonalInfo.Type2)
+                    {
+                        returnValue = true;
+                    }
+                }
+            }
+
+            // If the user wants to, look through the possible future evolutions to see if any of them fulfill the type requirements
+            if (!returnValue && considerFutureTypesYes.Checked)
+            {
+                var evoSpecies = evoTree.GetEvolutionsAndPreEvolutions(pkmn.Species, pkmn.Form);
+
+                foreach (var species in evoSpecies)
+                {
+                    PKM evolvedPkmn = EntityBlank.GetBlank(generation, gameVersion);
+                    evolvedPkmn.Species = species.Species;
+                    evolvedPkmn.Form = species.Form;
+
+                    foreach (string type in selectedTypes)
+                    {
+                        if (evolvedPkmn.PersonalInfo.Type1 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == evolvedPkmn.PersonalInfo.Type1)
+                        {
+                            returnValue = true;
+                        }
+                        else if (evolvedPkmn.PersonalInfo.Type2 != -1 && (int)(MoveType)Enum.Parse(typeof(MoveType), type) == evolvedPkmn.PersonalInfo.Type2)
+                        {
+                            returnValue = true;
+                        }
+                    }
+                }
+            }
+
+            return returnValue;
+        }
+
+        public ushort GenerateMove(ReadOnlySpan<ushort> baseMoves, ushort[] eggMoves, int moveSlot)
+        {
+            ushort returnValue = 0;
+
+            int eggMoveRand = random.Next(1, 100);
+
+            if (eggMoveRand <= eggMoveChance.Value)
+            {
+                ushort moveIndex = (ushort)(random.Next(0, eggMoves.Length));
+                returnValue = eggMoves[moveIndex];
+            }
+            else if (moveSlot < baseMoves.Length)
+            {
+                returnValue = baseMoves[moveSlot];
+            }
+
+            return returnValue;
         }
 
         public void AddToBoxesButtonClick(Object sender, EventArgs events)
@@ -414,9 +404,9 @@ namespace BulkImporter
                 }
 
                 // With all the checks out of the way, various attributes can be set.
-
-                EncounterEgg pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
+                EncounterEgg pkmnAsEgg = pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
                 LegalityAnalysis legality = new LegalityAnalysis(pkmn);
+
                 pkmn = pkmnAsEgg.ConvertToPKM(sav);
 
                 pkmn.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, sav.Generation);
@@ -471,7 +461,7 @@ namespace BulkImporter
                 pkmn.SetAbilityIndex(random.Next(0, 2));
                 if (sav.Generation >= 5)
                 {
-                    int haValue = (int)((random.Next(1, 100)) / (hiddenAbilityChance.Value / 100));
+                    int haValue = random.Next(1, 100);
 
                     if (haValue <= hiddenAbilityChance.Value)
                     {
@@ -482,7 +472,7 @@ namespace BulkImporter
                 // Determine if Pokemon should be shiny
                 if (shinyChance.Value > 0)
                 {
-                    int shinyValue = (int)((random.Next(1, 100)) / (shinyChance.Value / 100));
+                    int shinyValue = random.Next(1, 100);
 
                     if (shinyValue <= shinyChance.Value)
                     {
@@ -495,61 +485,55 @@ namespace BulkImporter
                 }
 
                 // Determine moves
-                try
+
+                Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
+                ReadOnlySpan<ushort> baseMoves = learnset.GetBaseEggMoves(sav.Generation);
+                ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
+
+                // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
+                // so there's no need to add any logic for handling situations where the user only wants base moves
+                if (eggMoveChance.Value > 0 && eggMoves.Length > 0)
                 {
-                    Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
-                    var baseMoves = learnset.GetBaseEggMoves(sav.Generation);
-                    var eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
-
-                    // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
-                    // so there's no need to add any logic for handling situations where the user only wants base moves
-                    if (eggMoveChance.Value > 0 && eggMoves.Length > 0)
+                    ushort nextMoveIndex = 0;
+                    int numTriesToGetMove = 0;
+                    do
                     {
-                        ushort nextMoveIndex = 0;
-                        int numTriesToGetMove = 0;
-                        do
-                        {
-                            nextMoveIndex = GenerateMove(baseMoves, eggMoves, pkmn.Moves.Length);
-                            pkmn.PushMove(nextMoveIndex);
-                            numTriesToGetMove++;
+                        nextMoveIndex = GenerateMove(baseMoves, eggMoves, pkmn.Moves.Length);
+                        pkmn.PushMove(nextMoveIndex);
+                        numTriesToGetMove++;
 
-                        } while (pkmn.MoveCount < 5 && nextMoveIndex != 0 && numTriesToGetMove < 20);
+                    } while (pkmn.MoveCount < 5 && nextMoveIndex != 0 && numTriesToGetMove < 20);
 
-                        pkmn.FixMoves();
+                    pkmn.FixMoves();
 
-                        if (sav.Generation > 5)
-                        {
-                            pkmn.SetRelearnMoves(pkmn.Moves);
-                        }
+                    if (sav.Generation > 5)
+                    {
+                        pkmn.SetRelearnMoves(pkmn.Moves);
+                    }
 
-                        Span<ushort> fixedMoves = stackalloc ushort[4];
-                        bool movesAreGood = MoveBreed.GetExpectedMoves(pkmn.Moves, pkmnAsEgg, fixedMoves);
+                    Span<ushort> fixedMoves = stackalloc ushort[4];
+                    bool movesAreGood = MoveBreed.GetExpectedMoves(pkmn.Moves, pkmnAsEgg, fixedMoves);
+
+                    for (int j = 0; j < 4; j++)
+                    {
+                        pkmn.SetMove(j, fixedMoves[j]);
+                        pkmn.SetSuggestedMovePP(j);
+                    }
+
+                    if (sav.Generation > 5)
+                    {
+                        LegalityAnalysis legalityAnalysis = new LegalityAnalysis(pkmn);
+                        var moves = MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, pkmnAsEgg);
 
                         for (int j = 0; j < 4; j++)
                         {
-                            pkmn.SetMove(j, fixedMoves[j]);
+                            pkmn.SetMove(j, moves[j]);
                             pkmn.SetSuggestedMovePP(j);
-                        }
-
-                        if (sav.Generation > 5)
-                        {
-                            LegalityAnalysis legalityAnalysis = new LegalityAnalysis(pkmn);
-                            var moves = MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, pkmnAsEgg);
-
-                            for (int j = 0; j < 4; j++)
-                            {
-                                pkmn.SetMove(j, moves[j]);
-                                pkmn.SetSuggestedMovePP(j);
-                                pkmn.SetRelearnMove(j, moves[j]);
-                            }
+                            pkmn.SetRelearnMove(j, moves[j]);
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.ToString());
-                    MessageBox.Show(e.StackTrace);
-                }
+
 
                 pkmn.IsEgg = true;
                 legality = new LegalityAnalysis(pkmn);

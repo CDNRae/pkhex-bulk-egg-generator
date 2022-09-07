@@ -17,6 +17,9 @@ Download the latest version from the <a href="https://github.com/CDNRae/pkhex-bu
 Once the plugin has been installed, you can view it under the "Tools" menu in PKHeX.  Click on the "Egg Generator" sub-menu item to open the Egg Generator. Set the options as you please, and when you're ready, hit "Generate Eggs". You should see your PC boxes fill up with Pokemon Eggs shortly after.
 
 ## Known Issues & FAQ
+### I can't see the Egg Generator in the menu
+PKHeX sometimes fails to load plugins. You can keep closing and re-opening it to try (which is admittedly annoying), or change its `PluginLoadMethod`. You can do this by going to `Options > Settings > Startup` and changing `PluginLoadMethod` to `LoadFromFile`. Restart PKHeX after making the changes. You may still have to close and reopen PKHeX once or twice, but not nearly as many times as before.
+
 ### Shiny Pokemon In Gold/Silver/Crystal ignore the min/max IV settings!
 This is expected behaviour, and it's because of the way shinies work in Gen 2. From Gen 3 onward, shininess is determined by three things: the Pokemon's original trainer's ID and secret ID, and the Pokemon's personality value. In Gen 2, however, shininess is determined by the Pokemon's IVs. For a Pokemon to be shiny in Gen 2, it must have a value of 10 for its Speed, Defense, and Special IVs, and a value of 2, 3, 6, 7, 10, 11, 14 or 15 for its Attack IV.
 
@@ -28,7 +31,6 @@ This is a known issue, and a solution is being looked into. It affects the follo
 * Omega Ruby and Alpha Sapphire
 * Ruby, Sapphire, and Emerald
 * FireRed and LeafGreen
-* 
 
 ### One or more of the generated Pokemon is illegal
 Please log an issue <a href="https://github.com/CDNRae/pkhex-bulk-egg-generator/issues">in the issues tab</a>, and include the problems PKHeX has with the Pokemon.

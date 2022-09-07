@@ -9,9 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="PKHeX.Core" Version="22.8.31" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
 
 </Project>
