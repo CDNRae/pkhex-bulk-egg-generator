@@ -365,7 +365,7 @@ namespace BulkImporter
 
                 // Make sure the Pokemon actually exists in the game, and can come from an egg. If it can't, decrease i by one and continue the loop.
                 // i gets decreased to keep the # of pokemon generated equal to numberToGenerate.
-                if (!sav.Personal.IsSpeciesInGame(baseForm.Species) || !Breeding.CanHatchAsEgg(baseForm.Species) || (Species)baseForm.Species == Species.Shedinja)
+                if (!sav.Personal.IsSpeciesInGame(baseForm.Species) || !sav.Personal.IsPresentInGame(baseForm.Species, baseForm.Form) || !Breeding.CanHatchAsEgg(baseForm.Species) || (Species)baseForm.Species == Species.Shedinja)
                 {
                     i--;
                     continue;
