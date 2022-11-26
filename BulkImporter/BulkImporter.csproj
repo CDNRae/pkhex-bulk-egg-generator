@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
+
     <OutputType>Library</OutputType>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
@@ -9,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PKHeX.Core" Version="22.9.13" />
+    <PackageReference Include="PKHeX.Core" Version="22.11.24" />
   </ItemGroup>
 
   <ItemGroup>

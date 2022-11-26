@@ -340,8 +340,8 @@ namespace BulkImporter
             List<int> speciesAlreadyAdded = new List<int>(); // a list of the ints of species already added to generatedPokemon. Helps reduce -- but not eliminate -- duplicates.
 
             // Start by making sure the game can generate eggs; if it cannot, the generator will not work and inform the user as such
-            if (!Breeding.CanGameGenerateEggs(sav.Context.GetSingleGameVersion()))
-            {
+            if (!Breeding.CanGameGenerateEggs(sav.Context.GetSingleGameVersion()) && sav.Context.GetSingleGameVersion() != GameVersion.SV )
+            { 
                 MessageBox.Show("Error! This game doesn't support egg generation. Please try another game. Game version " + sav.Context.GetSingleGameVersion().ToString());
                 return;
             }
@@ -448,6 +448,21 @@ namespace BulkImporter
                 {
                     pkmn.SetNickname("EGG");
                 }
+                // Set size for Gen 9
+                if (pkmn is IScaledSize s)
+                {
+                    s.HeightScalar = PokeSizeUtil.GetRandomScalar();
+                    s.WeightScalar = PokeSizeUtil.GetRandomScalar();
+
+                    if (pkmn is IScaledSize3 s3)
+                        s3.Scale = PokeSizeUtil.GetRandomScalar();
+                }
+                // Set Tera Type for gen 9
+                if (pkmn is ITeraType tera)
+                {
+                    var type = Tera9RNG.GetTeraTypeFromPersonal(pkmn.Species, pkmn.Form, Util.Rand.Rand64());
+                    tera.TeraTypeOriginal = (MoveType)type;
+                }
 
                 // Set the IVs based on min/max values
                 pkmn.IV_HP = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
@@ -485,7 +500,6 @@ namespace BulkImporter
                 }
 
                 // Determine moves
-
                 Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
                 ReadOnlySpan<ushort> baseMoves = learnset.GetBaseEggMoves(sav.Generation);
                 ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
