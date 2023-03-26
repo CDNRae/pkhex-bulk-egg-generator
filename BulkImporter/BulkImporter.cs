@@ -1,6 +1,7 @@
 ﻿using PKHeX.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace BulkImporter
@@ -31,7 +32,7 @@ namespace BulkImporter
 
         private CheckedListBox typeSelection = new CheckedListBox();
         private CheckBox considerFutureTypesYes = new CheckBox();
-        private CheckBox avoidDuplicates = new CheckBox();
+        private CheckBox allowDuplicates = new CheckBox();
 
         // Plugin initialization
         public void Initialize(params object[] args)
@@ -77,66 +78,35 @@ namespace BulkImporter
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
-            typeSelection.Location = new System.Drawing.Point(10, 25);
-            typeSelection.Size = new System.Drawing.Size(150, 300);
+            typeSelection.Location = new System.Drawing.Point(10, 30);
+            typeSelection.Size = new System.Drawing.Size(150, 350);
             typeSelection.SelectedValueChanged += new EventHandler(SelectOrDeselectAllTypes);
 
             formControls.Add(new Label
             {
-                Location = new System.Drawing.Point(8, 320),
+                Location = new System.Drawing.Point(170, 270),
                 AutoSize = true,
-                Text = "Consider typing of future evolutions?",
+                Text = "Consider typing of future\nevolutions?",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
             considerFutureTypesYes.Text = "Yes";
-            considerFutureTypesYes.Location = new System.Drawing.Point(10, 335);
+            considerFutureTypesYes.Location = new System.Drawing.Point(175, 300);
             considerFutureTypesYes.TextAlign = System.Drawing.ContentAlignment.TopLeft;
             considerFutureTypesYes.AutoSize = true;
             considerFutureTypesYes.Checked = false;
             considerFutureTypesYes.Name = "considerFutureTypes";
 
+            ToolTip futureTypesTooltip = new ToolTip();
+            futureTypesTooltip.SetToolTip(considerFutureTypesYes, "If checked, the tool will include Pokemon that\ndo not have one of the specified types,\nbut have an evolution that does.");
+
             formControls.Add(typeSelection);
             formControls.Add(considerFutureTypesYes);
-
-            formControls.Add(new Label
-            {
-                Location = new System.Drawing.Point(8, 370),
-                AutoSize = true,
-                Text = "Avoid duplicates if possible?",
-                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
-            });
-
-            avoidDuplicates.Text = "Yes";
-            avoidDuplicates.Location = new System.Drawing.Point(10, 385);
-            avoidDuplicates.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            avoidDuplicates.AutoSize = true;
-            avoidDuplicates.Checked = false;
-            avoidDuplicates.Name = "noDuplicates";
-
-            formControls.Add(typeSelection);
-            formControls.Add(avoidDuplicates);
-
-            // Set up the input for the number of pokemon to generate
-            formControls.Add(new Label
-            {
-                Location = new System.Drawing.Point(170, 10),
-                AutoSize = true,
-                Text = "Number of Pokemon to Generate",
-                Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
-            });
-
-            numberToGenerate.Value = 10;
-            numberToGenerate.Maximum = 100;
-            numberToGenerate.Minimum = 1;
-            numberToGenerate.Location = new System.Drawing.Point(170, 25);
-
-            formControls.Add(numberToGenerate);
 
             // Set up the input for the min IV value
             formControls.Add(new Label
             {
-                Location = new System.Drawing.Point(170, 55),
+                Location = new System.Drawing.Point(170, 20),
                 AutoSize = true,
                 Text = "Min IV Value",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
@@ -145,14 +115,14 @@ namespace BulkImporter
             minIVValue.Value = 0;
             minIVValue.Maximum = 31;
             minIVValue.Minimum = 0;
-            minIVValue.Location = new System.Drawing.Point(170, 70);
+            minIVValue.Location = new System.Drawing.Point(170, 35);
 
             formControls.Add(minIVValue);
 
             //Set up the input for the max IV value
             formControls.Add(new Label
             {
-                Location = new System.Drawing.Point(170, 100),
+                Location = new System.Drawing.Point(170, 70),
                 AutoSize = true,
                 Text = "Max IV Value",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
@@ -161,14 +131,14 @@ namespace BulkImporter
             maxIVValue.Value = 31;
             maxIVValue.Maximum = 31;
             maxIVValue.Minimum = 0;
-            maxIVValue.Location = new System.Drawing.Point(170, 115);
+            maxIVValue.Location = new System.Drawing.Point(170, 85);
 
             formControls.Add(maxIVValue);
 
             // Set up the input for shiny chance
             formControls.Add(new Label
             {
-                Location = new System.Drawing.Point(170, 145),
+                Location = new System.Drawing.Point(170, 120),
                 AutoSize = true,
                 Text = "Shiny Chance",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
@@ -180,14 +150,14 @@ namespace BulkImporter
             shinyChance.Value = 1;
             shinyChance.Maximum = 100;
             shinyChance.Minimum = 0;
-            shinyChance.Location = new System.Drawing.Point(170, 160);
+            shinyChance.Location = new System.Drawing.Point(170, 135);
 
             formControls.Add(shinyChance);
 
             // Set up the input for Egg Move Chance
             formControls.Add(new Label
             {
-                Location = new System.Drawing.Point(170, 190),
+                Location = new System.Drawing.Point(170, 170),
                 AutoSize = true,
                 Text = "Egg Move Chance",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
@@ -196,14 +166,14 @@ namespace BulkImporter
             eggMoveChance.Value = 25;
             eggMoveChance.Maximum = 100;
             eggMoveChance.Minimum = 0;
-            eggMoveChance.Location = new System.Drawing.Point(170, 205);
+            eggMoveChance.Location = new System.Drawing.Point(170, 185);
 
             formControls.Add(eggMoveChance);
 
             // Set up the input for Hidden Ability Chance
             formControls.Add(new Label
             {
-                Location = new System.Drawing.Point(170, 235),
+                Location = new System.Drawing.Point(170, 220),
                 AutoSize = true,
                 Text = "Hidden Ability Chance",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
@@ -212,7 +182,7 @@ namespace BulkImporter
             hiddenAbilityChance.Value = 25;
             hiddenAbilityChance.Maximum = 100;
             hiddenAbilityChance.Minimum = 0;
-            hiddenAbilityChance.Location = new System.Drawing.Point(170, 250);
+            hiddenAbilityChance.Location = new System.Drawing.Point(170, 235);
 
             if (sav.Generation < 5)
             {
@@ -225,7 +195,7 @@ namespace BulkImporter
 
             formControls.Add(hiddenAbilityChance);
 
-            // Set up "Add to Boxes" button
+            // Set up "Generate Pokemon" button
             createButton.Text = "Generate Pokemon";
             createButton.Size = new System.Drawing.Size(185, 20);
             createButton.Location = new System.Drawing.Point(100, 420);
@@ -334,73 +304,46 @@ namespace BulkImporter
         public void AddToBoxesButtonClick(Object sender, EventArgs events)
         {
             SaveFile sav = SaveFileEditor.SAV; // current savefile
-            int duplicateSkipCounter = 0; // used for skipping duplicate Pokemon when generating 'em 
-
             List<PKM> generatedPokemon = new List<PKM>(); // the pokemon to add to the boxes at the end of all this
-            List<int> speciesAlreadyAdded = new List<int>(); // a list of the ints of species already added to generatedPokemon. Helps reduce -- but not eliminate -- duplicates.
+            int pokedexMaxNumber = sav.MaxSpeciesID;
+            GameVersion version = sav.Version;
 
-            // Start by making sure the game can generate eggs; if it cannot, the generator will not work and inform the user as such
+            // Workaround for Ruby/Sapphire
+            if (version == GameVersion.RS)
+            {
+                version = GameVersion.R;
+            }
+
+            // Make sure the game can generate eggs; if it cannot, the generator will not work and inform the user as such
             if (!Breeding.CanGameGenerateEggs(sav.Context.GetSingleGameVersion()) && sav.Context.GetSingleGameVersion() != GameVersion.SV )
             { 
                 MessageBox.Show("Error! This game doesn't support egg generation. Please try another game. Game version " + sav.Context.GetSingleGameVersion().ToString());
                 return;
             }
             // loop for generating pokemon
-            for (int i = 0; i < numberToGenerate.Value; i++)
+            for (int i = 1; i < pokedexMaxNumber; i++)
             {
-                // Determine the species. Make sure it can come from an egg, and if needed, drop it to the lowest pre-evolution possible.
-                GameVersion version = sav.Version;
-
-                if (version == GameVersion.RS)
-                {
-                    version = GameVersion.R;
-                }
-
+                // Determine the species.
                 PKM pkmn = EntityBlank.GetBlank(sav.Generation, version);
-                pkmn.Species = (ushort)random.Next(0, sav.MaxSpeciesID);
+                pkmn.Species = (ushort)i;
                 pkmn.SetSuggestedFormArgument(pkmn.Species);
-
                 EvolutionTree evoTree = EvolutionTree.GetEvolutionTree(pkmn.Context);
                 var baseForm = evoTree.GetBaseSpeciesForm(pkmn.Species, pkmn.Form);
 
-                // Make sure the Pokemon actually exists in the game, and can come from an egg. If it can't, decrease i by one and continue the loop.
-                // i gets decreased to keep the # of pokemon generated equal to numberToGenerate.
-                if (!sav.Personal.IsSpeciesInGame(baseForm.Species) || !sav.Personal.IsPresentInGame(baseForm.Species, baseForm.Form) || !Breeding.CanHatchAsEgg(baseForm.Species) || (Species)baseForm.Species == Species.Shedinja)
+                // Make sure the Pokemon actually exists in the game, AND can come from an egg. If it can't, skip it and continue the loop.
+                if (baseForm.Species != pkmn.Species ||
+                    !sav.Personal.IsSpeciesInGame(pkmn.Species) || 
+                    !sav.Personal.IsPresentInGame(pkmn.Species, pkmn.Form) || 
+                    !Breeding.CanHatchAsEgg(pkmn.Species) || 
+                    (Species)pkmn.Species == Species.Shedinja)
                 {
-                    i--;
                     continue;
                 }
-
-                pkmn.Species = baseForm.Species;
-                pkmn.SetSuggestedFormArgument(pkmn.Species);
 
                 // Make sure the Pokemon's type is OK
                 if (!ValidatePokemonType(pkmn, evoTree, sav.Generation, sav.Version))
                 {
-                    i--;
                     continue;
-                }
-
-                // If the user wants to avoid duplicates, do a little check to see if we should re-start the for loop. To avoid getting stuck in an
-                // endless loop while still maintaining the number of Pokemon to generate, the program will skip a max of 10 Pokemon; the 11th will be
-                // added even if it's a duplicate species, and then the counter will be reset.
-                if (avoidDuplicates.Checked)
-                {
-                    // The below statement will restart the for loop; the rest just carry on after doing their thing
-                    if (speciesAlreadyAdded.Contains(baseForm.Species) && duplicateSkipCounter < 10)
-                    {
-                        duplicateSkipCounter++;
-                        i--;
-                        continue;
-                    }
-                    else if (duplicateSkipCounter >= 10)
-                    {
-                        duplicateSkipCounter = 0;
-                    }
-                    else
-                    {
-                        speciesAlreadyAdded.Add(baseForm.Species);
-                    }
                 }
 
                 // With all the checks out of the way, various attributes can be set.
@@ -448,20 +391,25 @@ namespace BulkImporter
                 {
                     pkmn.SetNickname("EGG");
                 }
-                // Set size for Gen 9
-                if (pkmn is IScaledSize s)
-                {
-                    s.HeightScalar = PokeSizeUtil.GetRandomScalar();
-                    s.WeightScalar = PokeSizeUtil.GetRandomScalar();
+                else if (sav.Generation == 9) {
+                    // Set met location to South Province Area 1
+                    pkmn.Met_Location = Locations.HatchLocation9;
 
-                    if (pkmn is IScaledSize3 s3)
-                        s3.Scale = PokeSizeUtil.GetRandomScalar();
-                }
-                // Set Tera Type for gen 9
-                if (pkmn is ITeraType tera)
-                {
-                    var type = Tera9RNG.GetTeraTypeFromPersonal(pkmn.Species, pkmn.Form, Util.Rand.Rand64());
-                    tera.TeraTypeOriginal = (MoveType)type;
+                    // Set size
+                    if (pkmn is IScaledSize s)
+                    {
+                        s.HeightScalar = PokeSizeUtil.GetRandomScalar();
+                        s.WeightScalar = PokeSizeUtil.GetRandomScalar();
+
+                        if (pkmn is IScaledSize3 s3)
+                            s3.Scale = PokeSizeUtil.GetRandomScalar();
+                    }
+                    // Set Tera Type
+                    if (pkmn is ITeraType tera)
+                    {
+                        var type = Tera9RNG.GetTeraTypeFromPersonal(pkmn.Species, pkmn.Form, Util.Rand.Rand64());
+                        tera.TeraTypeOriginal = (MoveType)type;
+                    }
                 }
 
                 // Set the IVs based on min/max values
@@ -563,7 +511,10 @@ namespace BulkImporter
                 generatedPokemon.Add(pkmn);
             }
 
-            sav.ImportPKMs(generatedPokemon);
+            //Re-arrange the list so Pokemon aren't added in Pokedex order
+            var rearrangedGeneratedPokemon = generatedPokemon.OrderBy(x => random.Next()).ToList();
+
+            sav.ImportPKMs(rearrangedGeneratedPokemon);
             SaveFileEditor.ReloadSlots();
 
         }
