@@ -498,11 +498,7 @@ namespace BulkImporter
             List<PKM> generatedPokemon = new List<PKM>(); // the pokemon to add to the boxes at the end of all this
             int pokedexMaxNumber = sav.MaxSpeciesID;
             GameVersion version = sav.Version;
-
-            Species[] alolanVariants = new Species[] { Species.Rattata, Species.Sandshrew, Species.Vulpix, Species.Diglett, Species.Geodude, Species.Meowth, Species.Grimer };
-            Species[] galarVariants = new Species[] { Species.Meowth, Species.Ponyta, Species.Farfetchd, Species.MrMime, Species.Corsola, Species.Zigzagoon, Species.Darumaka, Species.Yamask, Species.Stunfisk, Species.Slowpoke };
-            Species[] hisuiVariants = new Species[] { Species.Growlithe, Species.Voltorb, Species.Qwilfish, Species.Sneasel, Species.Zorua };
-            Species[] paldeanVariants = new Species[] { Species.Tauros, Species.Wooper };
+            
 
             // Workaround for Ruby/Sapphire
             if (version == GameVersion.RS)
@@ -524,23 +520,10 @@ namespace BulkImporter
                 pkmn.Species = (ushort)i;
                 pkmn.SetSuggestedFormArgument(pkmn.Species);
 
+
                 if (IsPokemonValid(pkmn, sav))
                 {
                     generatedPokemon.Add(GeneratePokemon(pkmn, sav));
-                }
-
-                // Check for Alolan forms
-                if (sav.Generation >= 7)
-                {
-                    if (alolanVariants.Contains((Species)pkmn.Species))
-                    {
-                        FormArgumentUtil.ChangeFormArgument(pkmn, 810);
-
-                        if (IsPokemonValid(pkmn, sav))
-                        {
-                            generatedPokemon.Add(GeneratePokemon(pkmn, sav));
-                        }
-                    }
                 }
             }
 
