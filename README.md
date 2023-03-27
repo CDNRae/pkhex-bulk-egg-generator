@@ -3,7 +3,7 @@
 Previously called the Bulk Pokemon Importer. The Bulk Egg Generator is a PKHeX plugin that allows you to generate eggs in your Pokemon save files. There are additional options that allow the user to control certain aspects of the generated eggs, such as their typing, IVs, nature, and so on.
 
 ## Current Features
-* Bulk import up to 100 Pokemon eggs at a time
+* Bulk generate up to 100 Pokemon eggs at a time
 * Restrict the generated eggs by one or more types, and opt to consider the eggs' future evolutions
 * Set the minimum and maxiumum IV values you want the generated eggs to have
 * Set the chance of a Pokemon being shiny
@@ -24,6 +24,11 @@ PKHeX sometimes fails to load plugins. You can keep closing and re-opening it to
 This is expected behaviour, and it's because of the way shinies work in Gen 2. From Gen 3 onward, shininess is determined by three things: the Pokemon's original trainer's ID and secret ID, and the Pokemon's personality value. In Gen 2, however, shininess is determined by the Pokemon's IVs. For a Pokemon to be shiny in Gen 2, it must have a value of 10 for its Speed, Defense, and Special IVs, and a value of 2, 3, 6, 7, 10, 11, 14 or 15 for its Attack IV.
 
 You can read more about the mechanic <a href="https://bulbapedia.bulbagarden.net/wiki/Shiny_Pok%C3%A9mon#Generation_II">here</a>.
+
+### PKHeX is flagging all Scarlet & Violet Pokemon as illegal
+The Pokemon being generated *are* legal; PKHeX just has issues recognizing them as such. You can verify this by selecting any Pokemon, and unchecking and re-checking the `Is Egg` option in the `Main` tab. If you then click the error icon, it will change to the valid icon.
+
+This is a known issue, and is being looked into. 
 
 ### PKHeX is flagging the generated Pokemon as illegal, but when I check each Pokemon individually it says they're fine
 This is a known issue, and a solution is being looked into. It affects the following games:
