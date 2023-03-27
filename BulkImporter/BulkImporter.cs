@@ -226,7 +226,7 @@ namespace BulkImporter
             }
         }
 
-        public bool ValidatePokemonType(PKM pkmn, EvolutionTree evoTree, int generation, GameVersion gameVersion)
+        public bool IsPokemonValidType(PKM pkmn, EvolutionTree evoTree, int generation, GameVersion gameVersion)
         {
             bool returnValue = false;
             var selectedTypes = typeSelection.CheckedItems;
@@ -301,12 +301,208 @@ namespace BulkImporter
             return returnValue;
         }
 
+        public bool IsPokemonValid(PKM pkmn, SaveFile sav)
+        {
+            bool returnValue = true;
+            EvolutionTree evoTree = EvolutionTree.GetEvolutionTree(pkmn.Context);
+            var baseForm = evoTree.GetBaseSpeciesForm(pkmn.Species, pkmn.Form);
+
+            // Make sure the Pokemon actually exists in the game, AND can come from an egg. If it can't, skip it and continue the loop.
+            if (baseForm.Species != pkmn.Species ||
+                !sav.Personal.IsSpeciesInGame(pkmn.Species) ||
+                !sav.Personal.IsPresentInGame(pkmn.Species, pkmn.Form) ||
+                !Breeding.CanHatchAsEgg(pkmn.Species) ||
+                (Species)pkmn.Species == Species.Shedinja)
+            {
+                returnValue = false;
+            }
+
+            // Make sure the Pokemon's type is OK
+            if (!IsPokemonValidType(pkmn, evoTree, sav.Generation, sav.Version))
+            {
+                returnValue = false;
+            }
+
+            return returnValue;
+        }
+
+        public PKM GeneratePokemon(PKM pkmn, SaveFile sav)
+        {
+            EncounterEgg pkmnAsEgg = pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
+            LegalityAnalysis legality = new LegalityAnalysis(pkmn);
+
+            pkmn = pkmnAsEgg.ConvertToPKM(sav);
+
+            pkmn.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, sav.Generation);
+            pkmn.IsNicknamed = true;
+            pkmn.OT_Friendship = EggStateLegality.GetMinimumEggHatchCycles(pkmn);
+            pkmn.Met_Location = 0;
+            pkmn.Gender = pkmn.GetSaneGender();
+
+            // There are a lot of quirks with how eggs are handled between generations, and even game versions; this collection of statements does some
+            // fine-tuning to account for that.
+            if (sav.Version == GameVersion.BD || sav.Version == GameVersion.SP || sav.Version == GameVersion.BDSP)
+            {
+                pkmn.Met_Location = 65535; // Eggs have no met location in BDSP
+            }
+            else if (sav.Version == GameVersion.Pt)
+            {
+                pkmn.Egg_Location = 2000; // Daycare
+                pkmn.IsNicknamed = false;
+                pkmn.Met_Level = 0;
+                pkmn.Version = (int)sav.Version;
+            }
+            else if (sav.Generation == 4)
+            {
+                // HGSS Eggs aren't nicknamed
+                pkmn.IsNicknamed = false;
+                pkmn.Version = (int)sav.Context.GetSingleGameVersion();
+                pkmn.Egg_Location = 2000;
+            }
+            else if (sav.Version == GameVersion.FRLG || sav.Version == GameVersion.FR || sav.Version == GameVersion.LG)
+            {
+                pkmn.Met_Location = Locations.HatchLocationFRLG; // Four Island -- if location isn't set, it defaults to Littleroot Town
+            }
+            else if (sav.Version == GameVersion.RSE || sav.Version == GameVersion.RS || sav.Version == GameVersion.R || sav.Version == GameVersion.S || sav.Version == GameVersion.E)
+            {
+                pkmn.Met_Location = Locations.HatchLocationRSE; // Route 117 -- if location isn't set, it defaults to Littleroot Town
+                pkmn.Version = (int)sav.Context.GetSingleGameVersion();
+            }
+            else if (sav.Generation == 2)
+            {
+                pkmn.SetNickname("EGG");
+            }
+            else if (sav.Generation == 9)
+            {
+                // Set met location to South Province Area 1
+                pkmn.Met_Location = Locations.HatchLocation9;
+
+                // Set size
+                if (pkmn is IScaledSize s)
+                {
+                    s.HeightScalar = PokeSizeUtil.GetRandomScalar();
+                    s.WeightScalar = PokeSizeUtil.GetRandomScalar();
+
+                    if (pkmn is IScaledSize3 s3)
+                        s3.Scale = PokeSizeUtil.GetRandomScalar();
+                }
+                // Set Tera Type
+                if (pkmn is ITeraType tera)
+                {
+                    var type = Tera9RNG.GetTeraTypeFromPersonal(pkmn.Species, pkmn.Form, Util.Rand.Rand64());
+                    tera.TeraTypeOriginal = (MoveType)type;
+                }
+            }
+
+            // Set the IVs based on min/max values
+            pkmn.IV_HP = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+            pkmn.IV_ATK = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+            pkmn.IV_DEF = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+            pkmn.IV_SPA = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+            pkmn.IV_SPD = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+            pkmn.IV_SPE = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
+
+            // Set ability
+            pkmn.SetAbilityIndex(random.Next(0, 2));
+            if (sav.Generation >= 5)
+            {
+                int haValue = random.Next(1, 100);
+
+                if (haValue <= hiddenAbilityChance.Value)
+                {
+                    pkmn.SetAbilityIndex(2); // set hidden ability
+                }
+            }
+
+            // Determine if Pokemon should be shiny
+            if (shinyChance.Value > 0)
+            {
+                int shinyValue = random.Next(1, 100);
+
+                if (shinyValue <= shinyChance.Value)
+                {
+                    pkmn.SetIsShiny(true);
+                }
+                else
+                {
+                    pkmn.SetIsShiny(false);
+                }
+            }
+
+            // Determine moves
+            Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
+            ReadOnlySpan<ushort> baseMoves = learnset.GetBaseEggMoves(sav.Generation);
+            ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
+
+            // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
+            // so there's no need to add any logic for handling situations where the user only wants base moves
+            if (eggMoveChance.Value > 0 && eggMoves.Length > 0)
+            {
+                ushort nextMoveIndex = 0;
+                int numTriesToGetMove = 0;
+                do
+                {
+                    nextMoveIndex = GenerateMove(baseMoves, eggMoves, pkmn.Moves.Length);
+                    pkmn.PushMove(nextMoveIndex);
+                    numTriesToGetMove++;
+
+                } while (pkmn.MoveCount < 5 && nextMoveIndex != 0 && numTriesToGetMove < 20);
+
+                pkmn.FixMoves();
+
+                if (sav.Generation > 5)
+                {
+                    pkmn.SetRelearnMoves(pkmn.Moves);
+                }
+
+                Span<ushort> fixedMoves = stackalloc ushort[4];
+                bool movesAreGood = MoveBreed.GetExpectedMoves(pkmn.Moves, pkmnAsEgg, fixedMoves);
+
+                for (int j = 0; j < 4; j++)
+                {
+                    pkmn.SetMove(j, fixedMoves[j]);
+                    pkmn.SetSuggestedMovePP(j);
+                }
+
+                if (sav.Generation > 5)
+                {
+                    LegalityAnalysis legalityAnalysis = new LegalityAnalysis(pkmn);
+                    var moves = MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, pkmnAsEgg);
+
+                    for (int j = 0; j < 4; j++)
+                    {
+                        pkmn.SetMove(j, moves[j]);
+                        pkmn.SetSuggestedMovePP(j);
+                        pkmn.SetRelearnMove(j, moves[j]);
+                    }
+                }
+            }
+
+            pkmn.IsEgg = true;
+            legality = new LegalityAnalysis(pkmn);
+            string report = legality.Report();
+
+            if (report.Contains("Hidden Ability"))
+            {
+                pkmn.SetAbilityIndex(random.Next(0, 2));
+            }
+
+            pkmn.Valid = legality.Valid;
+
+            return pkmn;
+        }
+
         public void AddToBoxesButtonClick(Object sender, EventArgs events)
         {
             SaveFile sav = SaveFileEditor.SAV; // current savefile
             List<PKM> generatedPokemon = new List<PKM>(); // the pokemon to add to the boxes at the end of all this
             int pokedexMaxNumber = sav.MaxSpeciesID;
             GameVersion version = sav.Version;
+
+            Species[] alolanVariants = new Species[] { Species.Rattata, Species.Sandshrew, Species.Vulpix, Species.Diglett, Species.Geodude, Species.Meowth, Species.Grimer };
+            Species[] galarVariants = new Species[] { Species.Meowth, Species.Ponyta, Species.Farfetchd, Species.MrMime, Species.Corsola, Species.Zigzagoon, Species.Darumaka, Species.Yamask, Species.Stunfisk, Species.Slowpoke };
+            Species[] hisuiVariants = new Species[] { Species.Growlithe, Species.Voltorb, Species.Qwilfish, Species.Sneasel, Species.Zorua };
+            Species[] paldeanVariants = new Species[] { Species.Tauros, Species.Wooper };
 
             // Workaround for Ruby/Sapphire
             if (version == GameVersion.RS)
@@ -323,192 +519,29 @@ namespace BulkImporter
             // loop for generating pokemon
             for (int i = 1; i < pokedexMaxNumber; i++)
             {
-                // Determine the species.
+                // Get species, set up legality, form, etc.
                 PKM pkmn = EntityBlank.GetBlank(sav.Generation, version);
                 pkmn.Species = (ushort)i;
                 pkmn.SetSuggestedFormArgument(pkmn.Species);
-                EvolutionTree evoTree = EvolutionTree.GetEvolutionTree(pkmn.Context);
-                var baseForm = evoTree.GetBaseSpeciesForm(pkmn.Species, pkmn.Form);
 
-                // Make sure the Pokemon actually exists in the game, AND can come from an egg. If it can't, skip it and continue the loop.
-                if (baseForm.Species != pkmn.Species ||
-                    !sav.Personal.IsSpeciesInGame(pkmn.Species) || 
-                    !sav.Personal.IsPresentInGame(pkmn.Species, pkmn.Form) || 
-                    !Breeding.CanHatchAsEgg(pkmn.Species) || 
-                    (Species)pkmn.Species == Species.Shedinja)
+                if (IsPokemonValid(pkmn, sav))
                 {
-                    continue;
+                    generatedPokemon.Add(GeneratePokemon(pkmn, sav));
                 }
 
-                // Make sure the Pokemon's type is OK
-                if (!ValidatePokemonType(pkmn, evoTree, sav.Generation, sav.Version))
+                // Check for Alolan forms
+                if (sav.Generation >= 7)
                 {
-                    continue;
-                }
-
-                // With all the checks out of the way, various attributes can be set.
-                EncounterEgg pkmnAsEgg = pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
-                LegalityAnalysis legality = new LegalityAnalysis(pkmn);
-
-                pkmn = pkmnAsEgg.ConvertToPKM(sav);
-
-                pkmn.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, sav.Generation);
-                pkmn.IsNicknamed = true;
-                pkmn.OT_Friendship = EggStateLegality.GetMinimumEggHatchCycles(pkmn);
-                pkmn.Met_Location = 0;
-                pkmn.Gender = pkmn.GetSaneGender();
-
-                // There are a lot of quirks with how eggs are handled between generations, and even game versions; this collection of statements does some
-                // fine-tuning to account for that.
-                if (sav.Version == GameVersion.BD || sav.Version == GameVersion.SP || sav.Version == GameVersion.BDSP)
-                {
-                    pkmn.Met_Location = 65535; // Eggs have no met location in BDSP
-                }
-                else if (sav.Version == GameVersion.Pt)
-                {
-                    pkmn.Egg_Location = 2000; // Daycare
-                    pkmn.IsNicknamed = false;
-                    pkmn.Met_Level = 0;
-                    pkmn.Version = (int)sav.Version;
-                }
-                else if (sav.Generation == 4)
-                {
-                    // HGSS Eggs aren't nicknamed
-                    pkmn.IsNicknamed = false;
-                    pkmn.Version = (int)sav.Context.GetSingleGameVersion();
-                    pkmn.Egg_Location = 2000;
-                }
-                else if (sav.Version == GameVersion.FRLG || sav.Version == GameVersion.FR || sav.Version == GameVersion.LG)
-                {
-                    pkmn.Met_Location = Locations.HatchLocationFRLG; // Four Island -- if location isn't set, it defaults to Littleroot Town
-                }
-                else if (sav.Version == GameVersion.RSE || sav.Version == GameVersion.RS || sav.Version == GameVersion.R || sav.Version == GameVersion.S || sav.Version == GameVersion.E)
-                {
-                    pkmn.Met_Location = Locations.HatchLocationRSE; // Route 117 -- if location isn't set, it defaults to Littleroot Town
-                    pkmn.Version = (int)sav.Context.GetSingleGameVersion();
-                }
-                else if (sav.Generation == 2)
-                {
-                    pkmn.SetNickname("EGG");
-                }
-                else if (sav.Generation == 9) {
-                    // Set met location to South Province Area 1
-                    pkmn.Met_Location = Locations.HatchLocation9;
-
-                    // Set size
-                    if (pkmn is IScaledSize s)
+                    if (alolanVariants.Contains((Species)pkmn.Species))
                     {
-                        s.HeightScalar = PokeSizeUtil.GetRandomScalar();
-                        s.WeightScalar = PokeSizeUtil.GetRandomScalar();
+                        FormArgumentUtil.ChangeFormArgument(pkmn, 810);
 
-                        if (pkmn is IScaledSize3 s3)
-                            s3.Scale = PokeSizeUtil.GetRandomScalar();
-                    }
-                    // Set Tera Type
-                    if (pkmn is ITeraType tera)
-                    {
-                        var type = Tera9RNG.GetTeraTypeFromPersonal(pkmn.Species, pkmn.Form, Util.Rand.Rand64());
-                        tera.TeraTypeOriginal = (MoveType)type;
-                    }
-                }
-
-                // Set the IVs based on min/max values
-                pkmn.IV_HP = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
-                pkmn.IV_ATK = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
-                pkmn.IV_DEF = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
-                pkmn.IV_SPA = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
-                pkmn.IV_SPD = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
-                pkmn.IV_SPE = random.Next((int)minIVValue.Value, (int)maxIVValue.Value);
-
-                // Set ability
-                pkmn.SetAbilityIndex(random.Next(0, 2));
-                if (sav.Generation >= 5)
-                {
-                    int haValue = random.Next(1, 100);
-
-                    if (haValue <= hiddenAbilityChance.Value)
-                    {
-                        pkmn.SetAbilityIndex(2); // set hidden ability
-                    }
-                }
-
-                // Determine if Pokemon should be shiny
-                if (shinyChance.Value > 0)
-                {
-                    int shinyValue = random.Next(1, 100);
-
-                    if (shinyValue <= shinyChance.Value)
-                    {
-                        pkmn.SetIsShiny(true);
-                    }
-                    else
-                    {
-                        pkmn.SetIsShiny(false);
-                    }
-                }
-
-                // Determine moves
-                Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
-                ReadOnlySpan<ushort> baseMoves = learnset.GetBaseEggMoves(sav.Generation);
-                ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
-
-                // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
-                // so there's no need to add any logic for handling situations where the user only wants base moves
-                if (eggMoveChance.Value > 0 && eggMoves.Length > 0)
-                {
-                    ushort nextMoveIndex = 0;
-                    int numTriesToGetMove = 0;
-                    do
-                    {
-                        nextMoveIndex = GenerateMove(baseMoves, eggMoves, pkmn.Moves.Length);
-                        pkmn.PushMove(nextMoveIndex);
-                        numTriesToGetMove++;
-
-                    } while (pkmn.MoveCount < 5 && nextMoveIndex != 0 && numTriesToGetMove < 20);
-
-                    pkmn.FixMoves();
-
-                    if (sav.Generation > 5)
-                    {
-                        pkmn.SetRelearnMoves(pkmn.Moves);
-                    }
-
-                    Span<ushort> fixedMoves = stackalloc ushort[4];
-                    bool movesAreGood = MoveBreed.GetExpectedMoves(pkmn.Moves, pkmnAsEgg, fixedMoves);
-
-                    for (int j = 0; j < 4; j++)
-                    {
-                        pkmn.SetMove(j, fixedMoves[j]);
-                        pkmn.SetSuggestedMovePP(j);
-                    }
-
-                    if (sav.Generation > 5)
-                    {
-                        LegalityAnalysis legalityAnalysis = new LegalityAnalysis(pkmn);
-                        var moves = MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, pkmnAsEgg);
-
-                        for (int j = 0; j < 4; j++)
+                        if (IsPokemonValid(pkmn, sav))
                         {
-                            pkmn.SetMove(j, moves[j]);
-                            pkmn.SetSuggestedMovePP(j);
-                            pkmn.SetRelearnMove(j, moves[j]);
+                            generatedPokemon.Add(GeneratePokemon(pkmn, sav));
                         }
                     }
                 }
-
-
-                pkmn.IsEgg = true;
-                legality = new LegalityAnalysis(pkmn);
-                string report = legality.Report();
-
-                if (report.Contains("Hidden Ability"))
-                {
-                    pkmn.SetAbilityIndex(random.Next(0, 2));
-                }
-
-                // Add the generated Pokemon
-                pkmn.Valid = legality.Valid;
-                generatedPokemon.Add(pkmn);
             }
 
             //Re-arrange the list so Pokemon aren't added in Pokedex order
