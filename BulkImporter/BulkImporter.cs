@@ -326,7 +326,7 @@ namespace BulkImporter
             return returnValue;
         }
 
-        public PKM GeneratePokemon(PKM pkmn, SaveFile sav)
+        public PKM GeneratePokemon(PKM pkmn, SaveFile sav, GameVersion version)
         {
             EncounterEgg pkmnAsEgg = pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
             LegalityAnalysis legality = new LegalityAnalysis(pkmn);
@@ -432,7 +432,7 @@ namespace BulkImporter
             // Determine moves
             Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
             ReadOnlySpan<ushort> baseMoves = learnset.GetBaseEggMoves(sav.Generation);
-            ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, sav.Version);
+            ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, version);
 
             // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
             // so there's no need to add any logic for handling situations where the user only wants base moves
@@ -498,12 +498,20 @@ namespace BulkImporter
             List<PKM> generatedPokemon = new List<PKM>(); // the pokemon to add to the boxes at the end of all this
             int pokedexMaxNumber = sav.MaxSpeciesID;
             GameVersion version = sav.Version;
-            
 
-            // Workaround for Ruby/Sapphire
+            // Workaround for games like Ruby/Sapphire, which get counted as RS, but needs to be either R or S
             if (version == GameVersion.RS)
             {
                 version = GameVersion.R;
+            }
+            // Diamond/Pearl
+            else if (version == GameVersion.DP)
+            {
+                version = GameVersion.D;
+            }
+            else if (version == GameVersion.HGSS)
+            {
+                version = GameVersion.HG;
             }
 
             // Make sure the game can generate eggs; if it cannot, the generator will not work and inform the user as such
@@ -523,7 +531,7 @@ namespace BulkImporter
 
                 if (IsPokemonValid(pkmn, sav))
                 {
-                    generatedPokemon.Add(GeneratePokemon(pkmn, sav));
+                    generatedPokemon.Add(GeneratePokemon(pkmn, sav, version));
                 }
             }
 
