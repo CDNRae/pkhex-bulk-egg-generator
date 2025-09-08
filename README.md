@@ -13,7 +13,7 @@ Previously called the Bulk Pokemon Importer. The Bulk Egg Generator is a PKHeX p
 ## Installation
 - If it does not already exist, create a `plugins` folder in the same directory as `PKHeX.exe`.
 - Download the latest version of BulkEggGenerator from the <a href="https://github.com/CDNRae/pkhex-bulk-importer/releases">releases</a> page.
-- Extract `BulkEggGenerator.dll` to the `plugins` folder.
+- Place `BulkEggGenerator.dll` to the `plugins` folder.
 
 Example file structure:
 ```
