@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace BulkImporter
+namespace BulkEggGenerator
 {
-    public class BulkImporterPlugin : IPlugin
+    public class BulkEggGenerator : IPlugin
     {
-        public string Name => nameof(BulkImporter);
+        public string Name => nameof(BulkEggGenerator);
         public int Priority => 1; // Loading order, lowest is first.
 
         // Initialized on plugin load
@@ -46,6 +46,14 @@ namespace BulkImporter
             var items = menu.Items;
             if (!(items.Find("Menu_Tools", false)[0] is ToolStripDropDownItem tools))
                 return;
+
+            foreach (ToolStripItem item in tools.DropDownItems)
+            {
+                if (item.Name == "Egg Generator")
+                {
+                    return;
+                }
+            }
 
             var menuItem = new ToolStripMenuItem("Egg Generator");
             menuItem.Click += (sender, eventArgs) => generateForm();
@@ -140,7 +148,7 @@ namespace BulkImporter
             {
                 Location = new System.Drawing.Point(170, 120),
                 AutoSize = true,
-                Text = "Shiny Chance",
+                Text = "Shiny Chance (%)",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
@@ -159,7 +167,7 @@ namespace BulkImporter
             {
                 Location = new System.Drawing.Point(170, 170),
                 AutoSize = true,
-                Text = "Egg Move Chance",
+                Text = "Egg Move Chance (%)",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
@@ -175,7 +183,7 @@ namespace BulkImporter
             {
                 Location = new System.Drawing.Point(170, 220),
                 AutoSize = true,
-                Text = "Hidden Ability Chance",
+                Text = "Hidden Ability Chance (%)",
                 Font = new System.Drawing.Font(Control.DefaultFont, System.Drawing.FontStyle.Bold)
             });
 
@@ -226,7 +234,7 @@ namespace BulkImporter
             }
         }
 
-        public bool IsPokemonValidType(PKM pkmn, EvolutionTree evoTree, int generation, GameVersion gameVersion)
+        public bool IsPokemonValidType(PKM pkmn, EvolutionTree evoTree, byte generation, GameVersion gameVersion)
         {
             bool returnValue = false;
             var selectedTypes = typeSelection.CheckedItems;
@@ -326,47 +334,89 @@ namespace BulkImporter
             return returnValue;
         }
 
-        public PKM GeneratePokemon(PKM pkmn, SaveFile sav, GameVersion version)
+        public static IEncounterEgg GeneratePokemonEgg(PKM pkmn, byte generation, GameVersion version)
         {
-            EncounterEgg pkmnAsEgg = pkmnAsEgg = new EncounterEgg(pkmn.Species, pkmn.Form, EggStateLegality.GetEggLevel(sav.Generation), sav.Generation, sav.Version, sav.Context);
+            if (generation == 2)
+            {
+                return new EncounterEgg2(pkmn.Species, version);
+            }
+            else if (generation == 3)
+            {
+                return new EncounterEgg3(pkmn.Species, version);
+            }
+            else if (generation == 4)
+            {
+                return new EncounterEgg4(pkmn.Species, version);
+            }
+            else if (generation == 5)
+            {
+                return new EncounterEgg5(pkmn.Species, pkmn.Form, version);
+            }
+            else if (generation == 6)
+            {
+                return new EncounterEgg6(pkmn.Species, pkmn.Form, version);
+            }
+            else if (generation == 7)
+            {
+                return new EncounterEgg7(pkmn.Species, pkmn.Form, version);
+            }
+            else if (generation == 8)
+            {
+                return new EncounterEgg8(pkmn.Species, pkmn.Form, version);
+            }
+            else if (generation == 9)
+            {
+                return new EncounterEgg9(pkmn.Species, pkmn.Form, version);
+            }
+            else
+            {
+                throw new NotImplementedException("Egg generation is not implemented for this generation.");
+            }
+        }
+
+        public PKM GeneratePokemon(PKM pkmn, SaveFile sav, GameVersion version, byte generation)
+        {
+
+            IEncounterEgg pkmnAsEgg = GeneratePokemonEgg(pkmn, sav.Generation, sav.Version);
+
             LegalityAnalysis legality = new LegalityAnalysis(pkmn);
 
             pkmn = pkmnAsEgg.ConvertToPKM(sav);
 
             pkmn.Nickname = SpeciesName.GetSpeciesNameGeneration(0, sav.Language, sav.Generation);
             pkmn.IsNicknamed = true;
-            pkmn.OT_Friendship = EggStateLegality.GetMinimumEggHatchCycles(pkmn);
-            pkmn.Met_Location = 0;
+            pkmn.OriginalTrainerFriendship = (byte)EggStateLegality.GetMinimumEggHatchCycles(pkmn);
+            pkmn.MetLocation = 0;
             pkmn.Gender = pkmn.GetSaneGender();
 
             // There are a lot of quirks with how eggs are handled between generations, and even game versions; this collection of statements does some
             // fine-tuning to account for that.
             if (sav.Version == GameVersion.BD || sav.Version == GameVersion.SP || sav.Version == GameVersion.BDSP)
             {
-                pkmn.Met_Location = 65535; // Eggs have no met location in BDSP
+                pkmn.MetLocation = 65535; // Eggs have no met location in BDSP
             }
             else if (sav.Version == GameVersion.Pt)
             {
-                pkmn.Egg_Location = 2000; // Daycare
+                pkmn.EggLocation = 2000; // Daycare
                 pkmn.IsNicknamed = false;
-                pkmn.Met_Level = 0;
-                pkmn.Version = (int)sav.Version;
+                pkmn.MetLevel = 0;
+                pkmn.Version = sav.Version;
             }
             else if (sav.Generation == 4)
             {
                 // HGSS Eggs aren't nicknamed
                 pkmn.IsNicknamed = false;
-                pkmn.Version = (int)sav.Context.GetSingleGameVersion();
-                pkmn.Egg_Location = 2000;
+                pkmn.Version = sav.Context.GetSingleGameVersion();
+                pkmn.EggLocation = 2000;
             }
             else if (sav.Version == GameVersion.FRLG || sav.Version == GameVersion.FR || sav.Version == GameVersion.LG)
             {
-                pkmn.Met_Location = Locations.HatchLocationFRLG; // Four Island -- if location isn't set, it defaults to Littleroot Town
+                pkmn.MetLocation = Locations.HatchLocationFRLG; // Four Island -- if location isn't set, it defaults to Littleroot Town
             }
             else if (sav.Version == GameVersion.RSE || sav.Version == GameVersion.RS || sav.Version == GameVersion.R || sav.Version == GameVersion.S || sav.Version == GameVersion.E)
             {
-                pkmn.Met_Location = Locations.HatchLocationRSE; // Route 117 -- if location isn't set, it defaults to Littleroot Town
-                pkmn.Version = (int)sav.Context.GetSingleGameVersion();
+                pkmn.MetLocation = Locations.HatchLocationRSE; // Route 117 -- if location isn't set, it defaults to Littleroot Town
+                pkmn.Version = sav.Context.GetSingleGameVersion();
             }
             else if (sav.Generation == 2)
             {
@@ -375,7 +425,7 @@ namespace BulkImporter
             else if (sav.Generation == 9)
             {
                 // Set met location to South Province Area 1
-                pkmn.Met_Location = Locations.HatchLocation9;
+                pkmn.MetLocation = Locations.HatchLocation9;
 
                 // Set size
                 if (pkmn is IScaledSize s)
@@ -430,9 +480,10 @@ namespace BulkImporter
             }
 
             // Determine moves
-            Learnset learnset = GameData.GetLearnset(sav.Version, pkmn.Species, pkmn.Form);
+            var learnSource = GameData.GetLearnSource(sav.Version);
+            var learnset = learnSource.GetLearnset(pkmn.Species, pkmn.Form);
             ReadOnlySpan<ushort> baseMoves = learnset.GetBaseEggMoves(sav.Generation);
-            ushort[] eggMoves = MoveEgg.GetEggMoves(sav.Generation, pkmn.Species, pkmn.Form, version);
+            ReadOnlySpan<ushort> eggMoves = learnSource.GetEggMoves(pkmn.Species, pkmn.Form);
 
             // PKHeX is smart and will automatically fill in a Pokemon's moves if we don't provide them,
             // so there's no need to add any logic for handling situations where the user only wants base moves
@@ -442,8 +493,8 @@ namespace BulkImporter
                 int numTriesToGetMove = 0;
                 do
                 {
-                    nextMoveIndex = GenerateMove(baseMoves, eggMoves, pkmn.Moves.Length);
-                    pkmn.PushMove(nextMoveIndex);
+                    nextMoveIndex = GenerateMove(baseMoves, eggMoves.ToArray(), pkmn.Moves.Length);
+                    pkmn.AddMove(nextMoveIndex);
                     numTriesToGetMove++;
 
                 } while (pkmn.MoveCount < 5 && nextMoveIndex != 0 && numTriesToGetMove < 20);
@@ -461,21 +512,22 @@ namespace BulkImporter
                 for (int j = 0; j < 4; j++)
                 {
                     pkmn.SetMove(j, fixedMoves[j]);
-                    pkmn.SetSuggestedMovePP(j);
                 }
 
                 if (sav.Generation > 5)
                 {
                     LegalityAnalysis legalityAnalysis = new LegalityAnalysis(pkmn);
-                    var moves = MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, pkmnAsEgg);
+                    Span<ushort> moves = stackalloc ushort[4];
+                    MoveListSuggest.GetSuggestedRelearnMovesFromEncounter(legalityAnalysis, moves, pkmnAsEgg);
 
                     for (int j = 0; j < 4; j++)
                     {
                         pkmn.SetMove(j, moves[j]);
-                        pkmn.SetSuggestedMovePP(j);
                         pkmn.SetRelearnMove(j, moves[j]);
                     }
                 }
+
+                pkmn.HealPP();
             }
 
             pkmn.IsEgg = true;
@@ -498,6 +550,7 @@ namespace BulkImporter
             List<PKM> generatedPokemon = new List<PKM>(); // the pokemon to add to the boxes at the end of all this
             int pokedexMaxNumber = sav.MaxSpeciesID;
             GameVersion version = sav.Version;
+            var generator = EncounterGenerator.GetGenerator(version, sav.Generation);
 
             // Workaround for games like Ruby/Sapphire, which get counted as RS, but needs to be either R or S
             if (version == GameVersion.RS)
@@ -515,8 +568,8 @@ namespace BulkImporter
             }
 
             // Make sure the game can generate eggs; if it cannot, the generator will not work and inform the user as such
-            if (!Breeding.CanGameGenerateEggs(sav.Context.GetSingleGameVersion()) && sav.Context.GetSingleGameVersion() != GameVersion.SV )
-            { 
+            if (!generator.CanGenerateEggs)
+            {
                 MessageBox.Show("Error! This game doesn't support egg generation. Please try another game. Game version " + sav.Context.GetSingleGameVersion().ToString());
                 return;
             }
@@ -531,7 +584,7 @@ namespace BulkImporter
 
                 if (IsPokemonValid(pkmn, sav))
                 {
-                    generatedPokemon.Add(GeneratePokemon(pkmn, sav, version));
+                    generatedPokemon.Add(GeneratePokemon(pkmn, sav, version, sav.Generation));
                 }
             }
 
